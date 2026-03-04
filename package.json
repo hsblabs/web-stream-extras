@@ -38,6 +38,10 @@
     "encryption",
     "typescript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hsblabs/web-stream-extras"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=22"

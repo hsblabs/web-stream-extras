@@ -1,0 +1,53 @@
+{
+  "name": "@hsblabs/web-stream-extras",
+  "version": "0.0.1",
+  "description": "Utilities for WHATWG streams.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "bench": "pnpm build && node --experimental-strip-types ./bench/encryption.bench.ts",
+    "publish:check": "biome check ./src ./bench && pnpm test && pnpm build",
+    "prepublishOnly": "pnpm publish:check",
+    "test": "vitest run ./src",
+    "test:watch": "vitest ./src",
+    "test:static": "pnpm lint && pnpm fmt",
+    "lint": "biome check ./src ./bench --write",
+    "fmt": "biome format --write ./src ./bench"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./encryption": "./dist/encryption.js",
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "web-stream",
+    "whatwg-stream",
+    "stream",
+    "encryption",
+    "typescript"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.5",
+    "@types/node": "^25.3.3",
+    "tsdown": "^0.21.0-beta.2",
+    "typescript": "6.0.0-beta",
+    "vitest": "^4.0.18"
+  },
+  "packageManager": "pnpm@10.30.3"
+}

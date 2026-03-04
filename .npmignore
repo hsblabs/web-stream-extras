@@ -1,0 +1,28 @@
+# The package is primarily controlled by package.json "files", but keep
+# explicit ignores as a defensive fallback if that whitelist changes.
+.agents/
+.claude/
+.github/
+.serena/
+.vscode/
+example/
+packages/
+src/
+bench/
+node_modules/
+
+AGENTS.md
+CLAUDE.md
+LESSONS.md
+TODO.md
+biome.json
+pnpm-lock.yaml
+skills-lock.json
+tsconfig.json
+tsdown.config.ts
+.editorconfig
+.gitignore
+.npmrc
+
+*.log
+*.tgz

@@ -1,0 +1,40 @@
+name: Publish @hsblabs/web-stream-extras to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify release tag matches package version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          EXPECTED_TAG="v${PACKAGE_VERSION}"
+          if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match ${EXPECTED_TAG}"
+            exit 1
+          fi
+
+      - name: Publish package
+        run: pnpm publish --no-git-checks

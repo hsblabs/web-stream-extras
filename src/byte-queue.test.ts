@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-	ByteQueue,
-	readAllBytes,
-	readableFromChunks,
-	toU8Array,
-} from "./index";
+import { ByteQueue } from "./byte-queue";
+import { readAllBytes, readableFromChunks } from "./index";
+import { toU8Array } from "./shared/uint8array";
 
 describe("ByteQueue", () => {
 	it("reads across chunk boundaries without losing order", () => {

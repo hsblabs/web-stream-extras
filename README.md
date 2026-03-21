@@ -10,8 +10,7 @@ Use this package when you need to:
 
 - build or consume `ReadableStream<Uint8Array>` pipelines
 - collect byte streams into a single `Uint8Array`
-- convert between strings, `Uint8Array`, and `ArrayBuffer`
-- build custom `TransformStream` utilities for binary data
+- convert between strings and `Uint8Array`
 - encrypt or decrypt byte streams with the Web Streams API
 
 This makes it a good fit for:
@@ -92,8 +91,7 @@ This package focuses on a small set of utilities that are useful in real byte-st
 
 - `readableFromChunks()` for quickly creating a `ReadableStream`
 - `readAllChunks()` and `readAllBytes()` for consuming a stream
-- `ByteTransformStream` for building binary `TransformStream` wrappers
-- `Uint8Array` and `ArrayBuffer` helpers for consistent byte handling
+- binary conversion helpers for strings and random byte generation
 - `encryption` helpers for stream encryption without changing your stream-first API style
 
 The goal is to keep Web Streams code simple, predictable, and easy to compose.
@@ -105,20 +103,18 @@ The goal is to keep Web Streams code simple, predictable, and easy to compose.
 The root package provides:
 
 - Web Streams utilities for creating and consuming streams
-- byte conversion helpers for `Uint8Array`, strings, and `ArrayBuffer`
-- small building blocks for binary transform pipelines
+- byte conversion helpers for strings and `Uint8Array`
 
 Representative exports include:
 
 - `readableFromChunks`
 - `readAllChunks`
 - `readAllBytes`
-- `ByteTransformStream`
-- `ByteQueue`
 - `stringToBinary`
 - `binaryToString`
-- `toU8Array`
-- `toArrayBuffer`
+- `randomBytes`
+
+Low-level buffering and byte-normalization helpers are internal implementation details and are not part of the supported root public API.
 
 ### `@hsblabs/web-stream-extras/encryption`
 

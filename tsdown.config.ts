@@ -1,7 +1,7 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-	entry: ["src/index.ts", "src/encryption.ts"],
+	entry: ["src/index.ts", "src/encryption.ts", "src/png.ts"],
 	outDir: "dist",
 	target: "es2022",
 	format: "esm",

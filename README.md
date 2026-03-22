@@ -12,6 +12,7 @@ Use this package when you need to:
 - collect byte streams into a single `Uint8Array`
 - convert between strings and `Uint8Array`
 - encrypt or decrypt byte streams with the Web Streams API
+- embed or extract binary payloads inside PNG `tEXt` chunks
 
 This makes it a good fit for:
 
@@ -85,6 +86,26 @@ const result = await readAllBytes(decrypted);
 console.log(new TextDecoder().decode(result)); // "secret payload"
 ```
 
+### Embed and extract a binary payload in PNG
+
+```ts
+import {
+  createPNGTextChunkWriter,
+  extractPNGTextChunk,
+} from "@hsblabs/web-stream-extras/png";
+import { readAllBytes, readableFromChunks } from "@hsblabs/web-stream-extras";
+
+const sourcePNG = readableFromChunks(pngBytes);
+const payloadWriter = createPNGTextChunkWriter(sourcePNG);
+
+await readableFromChunks(fileBytes).pipeTo(payloadWriter.writable);
+const rebuiltPNG = await readAllBytes(payloadWriter.readable);
+
+const extracted = await readAllBytes(
+  extractPNGTextChunk(readableFromChunks(rebuiltPNG)),
+);
+```
+
 ## Why Use It
 
 This package focuses on a small set of utilities that are useful in real byte-stream pipelines:
@@ -93,6 +114,7 @@ This package focuses on a small set of utilities that are useful in real byte-st
 - `readAllChunks()` and `readAllBytes()` for consuming a stream
 - binary conversion helpers for strings and random byte generation
 - `encryption` helpers for stream encryption without changing your stream-first API style
+- `png` helpers for embedding and extracting binary payloads in PNG metadata
 
 The goal is to keep Web Streams code simple, predictable, and easy to compose.
 
@@ -130,6 +152,17 @@ The `encryption` subpath provides stream encryption utilities for binary streams
 
 `webCryptoStream(masterKey)` is a higher-level helper for applications that manage stream keys with the Web Crypto API. It uses an `AES-GCM` master key to create encrypted 32-byte stream keys, then unwraps those keys before delegating to `encryptStream()` and `decryptStream()`.
 
+### `@hsblabs/web-stream-extras/png`
+
+The `png` subpath provides binary payload helpers for PNG files:
+
+- `createPNGTextChunkWriter`
+- `extractPNGTextChunk`
+
+`createPNGTextChunkWriter()` accepts a source PNG stream and returns a `{ writable, readable }` pair. Write arbitrary `Uint8Array` payload bytes into `writable`, then read the rebuilt PNG from `readable`.
+
+`extractPNGTextChunk()` reads a PNG stream and returns the embedded binary payload as `ReadableStream<Uint8Array>`.
+
 ### `webCryptoStream` example
 
 ```ts
@@ -164,10 +197,13 @@ console.log(new TextDecoder().decode(result)); // "secret payload"
 - Runtime APIs:
   - root utilities depend on the WHATWG Streams API
   - `encryption` depends on both the Web Streams API and Web Crypto
+  - `png` depends on the WHATWG Streams API
 
 ## Notes
 
 - `encryption` is intentionally a subpath export. The root package is not encryption-only.
+- `png` is intentionally a subpath export. The root package stays focused on generic stream helpers.
 - This package does not handle authentication, password-based key derivation, user management, or key storage.
 - For `encryption`, you are expected to provide the raw encryption key (`Uint8Array`) yourself.
 - `webCryptoStream()` is optional. It is a convenience wrapper when you already manage a separate `AES-GCM` master key and want encrypted per-stream keys as strings.
+- `png` stores payload bytes in internal `tEXt` chunks and does not expose low-level PNG metadata knobs in the public API.

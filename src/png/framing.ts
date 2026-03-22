@@ -1,6 +1,6 @@
+import { decodeCOBSFrame, encodeCOBSFrame } from "../cobs/public";
 import { throwError } from "../shared/error";
 import { concatU8Arrays } from "../shared/uint8array";
-import { decodeCOBS, encodeCOBS } from "./cobs";
 import {
 	PNG_IEND_CHUNK_TYPE,
 	PNG_INTERNAL_TEXT_CHUNK_KEYWORD,
@@ -140,11 +140,11 @@ export function createPayloadSegment(
 	header.set(writeUint32BE(input.segmentCount), 10);
 	header.set(writeUint32BE(input.payloadCrc32), 14);
 
-	return encodeCOBS(concatU8Arrays(header, input.segmentData));
+	return encodeCOBSFrame(concatU8Arrays(header, input.segmentData));
 }
 
 export function parsePayloadSegment(encoded: Uint8Array): ParsedPayloadSegment {
-	const raw = decodeCOBS(encoded);
+	const raw = decodeCOBSFrame(encoded);
 
 	if (raw.byteLength < PNG_PAYLOAD_HEADER_LENGTH) {
 		throwError("PNG payload segment header is truncated");

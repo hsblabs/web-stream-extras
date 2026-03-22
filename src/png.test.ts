@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { decodeCOBSFrame, encodeCOBSFrame } from "./cobs";
 import * as pngApi from "./png";
-import { decodeCOBS, encodeCOBS } from "./png/cobs";
 import {
 	PNG_INTERNAL_TEXT_CHUNK_KEYWORD,
 	PNG_PAYLOAD_MAGIC,
@@ -126,7 +126,7 @@ describe("png helpers", () => {
 	it("round-trips arbitrary bytes through COBS", () => {
 		const input = new Uint8Array([0, 1, 0, 2, 3, 0, 4, 0]);
 
-		expect(decodeCOBS(encodeCOBS(input))).toEqual(input);
+		expect(decodeCOBSFrame(encodeCOBSFrame(input))).toEqual(input);
 	});
 
 	it("builds a valid tEXt chunk with matching CRC", () => {
@@ -232,7 +232,7 @@ describe("extractPNGTextChunk", () => {
 		const mutated = mutateFirstInternalChunk(embedded, (segmentRaw) => {
 			const next = segmentRaw.slice();
 			next[4] = 0x7f;
-			return encodeCOBS(next);
+			return encodeCOBSFrame(next);
 		});
 
 		await expect(

@@ -11,6 +11,7 @@ Use this package when you need to:
 - build or consume `ReadableStream<Uint8Array>` pipelines
 - collect byte streams into a single `Uint8Array`
 - convert between strings and `Uint8Array`
+- encode or decode delimiter-separated COBS frames
 - encrypt or decrypt byte streams with the Web Streams API
 - embed or extract binary payloads inside PNG `tEXt` chunks
 
@@ -86,6 +87,24 @@ const result = await readAllBytes(decrypted);
 console.log(new TextDecoder().decode(result)); // "secret payload"
 ```
 
+### Encode and decode COBS frames
+
+```ts
+import {
+  createCOBSDecoderStream,
+  createCOBSEncoderStream,
+} from "@hsblabs/web-stream-extras/cobs";
+import { readableFromChunks } from "@hsblabs/web-stream-extras";
+
+const rawFrames = readableFromChunks([
+  Uint8Array.of(0x11, 0x22, 0x00, 0x33),
+  Uint8Array.of(0xff, 0xee),
+]);
+
+const encoded = rawFrames.pipeThrough(createCOBSEncoderStream());
+const decoded = encoded.pipeThrough(createCOBSDecoderStream());
+```
+
 ### Embed and extract a binary payload in PNG
 
 ```ts
@@ -113,6 +132,7 @@ This package focuses on a small set of utilities that are useful in real byte-st
 - `readableFromChunks()` for quickly creating a `ReadableStream`
 - `readAllChunks()` and `readAllBytes()` for consuming a stream
 - binary conversion helpers for strings and random byte generation
+- `cobs` helpers for delimiter-separated frame encoding and decoding
 - `encryption` helpers for stream encryption without changing your stream-first API style
 - `png` helpers for embedding and extracting binary payloads in PNG metadata
 
@@ -151,6 +171,21 @@ The `encryption` subpath provides stream encryption utilities for binary streams
 `encryptStream()` and `decryptStream()` are convenience helpers for piping an existing `ReadableStream<Uint8Array>` through the corresponding transform stream.
 
 `webCryptoStream(masterKey)` is a higher-level helper for applications that manage stream keys with the Web Crypto API. It uses an `AES-GCM` master key to create encrypted 32-byte stream keys, then unwraps those keys before delegating to `encryptStream()` and `decryptStream()`.
+
+### `@hsblabs/web-stream-extras/cobs`
+
+The `cobs` subpath provides Consistent Overhead Byte Stuffing helpers:
+
+- `encodeCOBSFrame`
+- `decodeCOBSFrame`
+- `createCOBSEncoderStream`
+- `createCOBSDecoderStream`
+- `readCOBS`
+- `writeCOBS`
+
+`encodeCOBSFrame()` and `decodeCOBSFrame()` work on a single frame without the trailing delimiter.
+
+The stream helpers use `0x00` as the frame delimiter. Each input chunk to `createCOBSEncoderStream()` is treated as one raw frame, and `createCOBSDecoderStream()` emits one decoded frame for each delimiter-terminated encoded frame.
 
 ### `@hsblabs/web-stream-extras/png`
 
@@ -196,11 +231,13 @@ console.log(new TextDecoder().decode(result)); // "secret payload"
 - Browsers: works in modern browsers with Web Streams support
 - Runtime APIs:
   - root utilities depend on the WHATWG Streams API
+  - `cobs` depends on the WHATWG Streams API
   - `encryption` depends on both the Web Streams API and Web Crypto
   - `png` depends on the WHATWG Streams API
 
 ## Notes
 
+- `cobs` is intentionally a subpath export. The root package stays focused on generic stream helpers.
 - `encryption` is intentionally a subpath export. The root package is not encryption-only.
 - `png` is intentionally a subpath export. The root package stays focused on generic stream helpers.
 - This package does not handle authentication, password-based key derivation, user management, or key storage.

@@ -14,8 +14,9 @@ export const PNG_IEND_CHUNK_TYPE = "IEND";
 export const PNG_INTERNAL_TEXT_CHUNK_KEYWORD = "hsblabs-web-stream-extras-bin";
 
 export const PNG_PAYLOAD_MAGIC = new TextEncoder().encode("HSBP");
-export const PNG_PAYLOAD_VERSION = 1;
-export const PNG_PAYLOAD_FLAG_FIRST = 1 << 0;
-export const PNG_PAYLOAD_FLAG_LAST = 1 << 1;
+export const PNG_PAYLOAD_VERSION = 2;
+export const PNG_PAYLOAD_SEGMENT_KIND_DATA = 0;
+export const PNG_PAYLOAD_SEGMENT_KIND_MANIFEST = 1;
 export const PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH = 32 * 1024;
-export const PNG_PAYLOAD_HEADER_LENGTH = 18;
+export const PNG_PAYLOAD_DATA_HEADER_LENGTH = 10;
+export const PNG_PAYLOAD_MANIFEST_HEADER_LENGTH = 14;

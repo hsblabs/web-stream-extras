@@ -1,34 +1,13 @@
+import { ByteQueue } from "../byte-queue";
 import { throwError } from "../shared/error";
-import { concatU8Arrays } from "../shared/uint8array";
 
 const COBS_DELIMITER = 0x00;
-const EMPTY_BYTES = new Uint8Array(0);
 
-const withDelimiter = (encodedFrame: Uint8Array): Uint8Array =>
-	concatU8Arrays(encodedFrame, Uint8Array.of(COBS_DELIMITER));
-
-interface SplitFramesResult {
-	frames: Uint8Array[];
-	rest: Uint8Array;
-}
-
-const splitFramesByDelimiter = (buffer: Uint8Array): SplitFramesResult => {
-	const frames: Uint8Array[] = [];
-	let start = 0;
-
-	for (let index = 0; index < buffer.byteLength; index++) {
-		if (buffer[index] !== COBS_DELIMITER) {
-			continue;
-		}
-
-		frames.push(buffer.slice(start, index));
-		start = index + 1;
-	}
-
-	return {
-		frames,
-		rest: buffer.slice(start),
-	};
+const withDelimiter = (encodedFrame: Uint8Array): Uint8Array => {
+	const result = new Uint8Array(encodedFrame.byteLength + 1);
+	result.set(encodedFrame, 0);
+	result[encodedFrame.byteLength] = COBS_DELIMITER;
+	return result;
 };
 
 export const encodeCOBSFrame = (frame: Uint8Array): Uint8Array => {
@@ -109,7 +88,7 @@ export const createCOBSDecoderStream = (): TransformStream<
 	Uint8Array,
 	Uint8Array
 > => {
-	let buffer = EMPTY_BYTES;
+	const buffer = new ByteQueue();
 
 	return new TransformStream<Uint8Array, Uint8Array>({
 		flush() {
@@ -118,15 +97,18 @@ export const createCOBSDecoderStream = (): TransformStream<
 			}
 		},
 		transform(chunk, controller) {
-			const { frames, rest } = splitFramesByDelimiter(
-				concatU8Arrays(buffer, chunk),
-			);
+			buffer.append(chunk);
 
-			for (const frame of frames) {
+			while (true) {
+				const delimiterIndex = buffer.indexOf(COBS_DELIMITER);
+				if (delimiterIndex === -1) {
+					return;
+				}
+
+				const frame = buffer.read(delimiterIndex);
+				buffer.discard(1);
 				controller.enqueue(decodeCOBSFrame(frame));
 			}
-
-			buffer = rest;
 		},
 	});
 };

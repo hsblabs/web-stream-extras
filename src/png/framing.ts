@@ -4,11 +4,12 @@ import { concatU8Arrays } from "../shared/uint8array";
 import {
 	PNG_IEND_CHUNK_TYPE,
 	PNG_INTERNAL_TEXT_CHUNK_KEYWORD,
-	PNG_PAYLOAD_FLAG_FIRST,
-	PNG_PAYLOAD_FLAG_LAST,
-	PNG_PAYLOAD_HEADER_LENGTH,
+	PNG_PAYLOAD_DATA_HEADER_LENGTH,
 	PNG_PAYLOAD_MAGIC,
+	PNG_PAYLOAD_MANIFEST_HEADER_LENGTH,
 	PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH,
+	PNG_PAYLOAD_SEGMENT_KIND_DATA,
+	PNG_PAYLOAD_SEGMENT_KIND_MANIFEST,
 	PNG_PAYLOAD_VERSION,
 	PNG_SIGNATURE,
 	PNG_TEXT_CHUNK_TYPE,
@@ -30,21 +31,38 @@ export interface PNGChunk {
 	type: string;
 }
 
-export interface CreatePayloadSegmentInput {
-	isFirst: boolean;
-	isLast: boolean;
-	payloadCrc32: number;
-	segmentCount: number;
+export interface CreatePayloadDataSegmentInput {
 	segmentData: Uint8Array;
 	segmentIndex: number;
 }
 
-export interface ParsedPayloadSegment extends CreatePayloadSegmentInput {
-	flags: number;
+export interface CreatePayloadManifestSegmentInput {
+	payloadCrc32: number;
+	segmentCount: number;
+}
+
+interface ParsedPayloadSegmentBase {
+	kind: "data" | "manifest";
 	magic: Uint8Array;
 	raw: Uint8Array;
 	version: number;
 }
+
+export interface ParsedPayloadDataSegment extends ParsedPayloadSegmentBase {
+	kind: "data";
+	segmentData: Uint8Array;
+	segmentIndex: number;
+}
+
+export interface ParsedPayloadManifestSegment extends ParsedPayloadSegmentBase {
+	kind: "manifest";
+	payloadCrc32: number;
+	segmentCount: number;
+}
+
+export type ParsedPayloadSegment =
+	| ParsedPayloadDataSegment
+	| ParsedPayloadManifestSegment;
 
 interface ParsePNGBytesOptions {
 	requireIEND?: boolean;
@@ -98,6 +116,16 @@ function parseTextChunkKeyword(data: Uint8Array): string | null {
 	return latin1BytesToString(data.subarray(0, separatorIndex));
 }
 
+export function assertPNGSignature(signature: Uint8Array): void {
+	if (signature.byteLength < PNG_SIGNATURE.byteLength) {
+		throwError("PNG signature is truncated");
+	}
+
+	if (!PNG_SIGNATURE.every((value, index) => signature[index] === value)) {
+		throwError("PNG signature is invalid");
+	}
+}
+
 export function createChunk(type: string, data: Uint8Array): Uint8Array {
 	assertChunkType(type);
 	const typeBytes = textEncoder.encode(type);
@@ -121,32 +149,35 @@ export function createTextChunk(
 	);
 }
 
-export function createPayloadSegment(
-	input: CreatePayloadSegmentInput,
+export function createPayloadDataSegment(
+	input: CreatePayloadDataSegmentInput,
 ): Uint8Array {
-	if (input.segmentCount <= 0) {
-		throwError("PNG payload segment count must be positive");
-	}
-
-	const header = new Uint8Array(PNG_PAYLOAD_HEADER_LENGTH);
+	const header = new Uint8Array(PNG_PAYLOAD_DATA_HEADER_LENGTH);
 	header.set(PNG_PAYLOAD_MAGIC, 0);
 	header[4] = PNG_PAYLOAD_VERSION;
-
-	let flags = 0;
-	if (input.isFirst) flags |= PNG_PAYLOAD_FLAG_FIRST;
-	if (input.isLast) flags |= PNG_PAYLOAD_FLAG_LAST;
-	header[5] = flags;
+	header[5] = PNG_PAYLOAD_SEGMENT_KIND_DATA;
 	header.set(writeUint32BE(input.segmentIndex), 6);
-	header.set(writeUint32BE(input.segmentCount), 10);
-	header.set(writeUint32BE(input.payloadCrc32), 14);
 
 	return encodeCOBSFrame(concatU8Arrays(header, input.segmentData));
+}
+
+export function createPayloadManifestSegment(
+	input: CreatePayloadManifestSegmentInput,
+): Uint8Array {
+	const header = new Uint8Array(PNG_PAYLOAD_MANIFEST_HEADER_LENGTH);
+	header.set(PNG_PAYLOAD_MAGIC, 0);
+	header[4] = PNG_PAYLOAD_VERSION;
+	header[5] = PNG_PAYLOAD_SEGMENT_KIND_MANIFEST;
+	header.set(writeUint32BE(input.segmentCount), 6);
+	header.set(writeUint32BE(input.payloadCrc32), 10);
+
+	return encodeCOBSFrame(header);
 }
 
 export function parsePayloadSegment(encoded: Uint8Array): ParsedPayloadSegment {
 	const raw = decodeCOBSFrame(encoded);
 
-	if (raw.byteLength < PNG_PAYLOAD_HEADER_LENGTH) {
+	if (raw.byteLength < PNG_PAYLOAD_DATA_HEADER_LENGTH) {
 		throwError("PNG payload segment header is truncated");
 	}
 
@@ -160,27 +191,34 @@ export function parsePayloadSegment(encoded: Uint8Array): ParsedPayloadSegment {
 		throwError("PNG payload segment version is invalid");
 	}
 
-	const flags = raw[5] ?? 0;
-	const segmentIndex = readUint32BE(raw, 6);
-	const segmentCount = readUint32BE(raw, 10);
-	const payloadCrc32 = readUint32BE(raw, 14);
-
-	if (segmentCount === 0) {
-		throwError("PNG payload segment count must be positive");
+	const kind = raw[5];
+	if (kind === PNG_PAYLOAD_SEGMENT_KIND_DATA) {
+		return {
+			kind: "data",
+			magic: magic.slice(),
+			raw,
+			segmentData: raw.subarray(PNG_PAYLOAD_DATA_HEADER_LENGTH),
+			segmentIndex: readUint32BE(raw, 6),
+			version,
+		};
 	}
 
-	return {
-		flags,
-		isFirst: (flags & PNG_PAYLOAD_FLAG_FIRST) !== 0,
-		isLast: (flags & PNG_PAYLOAD_FLAG_LAST) !== 0,
-		magic: magic.slice(),
-		payloadCrc32,
-		raw,
-		segmentCount,
-		segmentData: raw.subarray(PNG_PAYLOAD_HEADER_LENGTH),
-		segmentIndex,
-		version,
-	};
+	if (kind === PNG_PAYLOAD_SEGMENT_KIND_MANIFEST) {
+		if (raw.byteLength !== PNG_PAYLOAD_MANIFEST_HEADER_LENGTH) {
+			throwError("PNG payload manifest header is invalid");
+		}
+
+		return {
+			kind: "manifest",
+			magic: magic.slice(),
+			payloadCrc32: readUint32BE(raw, 10),
+			raw,
+			segmentCount: readUint32BE(raw, 6),
+			version,
+		};
+	}
+
+	throwError("PNG payload segment kind is invalid");
 }
 
 export function isInternalTextChunk(chunk: PNGChunk): boolean {
@@ -192,9 +230,8 @@ export function isInternalTextChunk(chunk: PNGChunk): boolean {
 
 export function buildPayloadTextChunks(payload: Uint8Array): Uint8Array[] {
 	const payloadCrc32 = crc32(payload);
-	const segmentCount = Math.max(
-		1,
-		Math.ceil(payload.byteLength / PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH),
+	const segmentCount = Math.ceil(
+		payload.byteLength / PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH,
 	);
 	const chunks: Uint8Array[] = [];
 
@@ -204,16 +241,11 @@ export function buildPayloadTextChunks(payload: Uint8Array): Uint8Array[] {
 			start + PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH,
 			payload.byteLength,
 		);
-		const segmentData =
-			payload.byteLength === 0 ? new Uint8Array(0) : payload.slice(start, end);
+		const segmentData = payload.slice(start, end);
 
 		chunks.push(
 			createTextChunk(
-				createPayloadSegment({
-					isFirst: index === 0,
-					isLast: index === segmentCount - 1,
-					payloadCrc32,
-					segmentCount,
+				createPayloadDataSegment({
 					segmentData,
 					segmentIndex: index,
 				}),
@@ -221,57 +253,86 @@ export function buildPayloadTextChunks(payload: Uint8Array): Uint8Array[] {
 		);
 	}
 
+	chunks.push(
+		createTextChunk(
+			createPayloadManifestSegment({
+				payloadCrc32,
+				segmentCount,
+			}),
+		),
+	);
+
 	return chunks;
+}
+
+export interface PNGChunkHeader {
+	length: number;
+	type: string;
+}
+
+export function parsePNGChunkHeader(headerBytes: Uint8Array): PNGChunkHeader {
+	if (headerBytes.byteLength < 8) {
+		throwError("PNG chunk header is truncated");
+	}
+
+	const typeBytes = headerBytes.subarray(4, 8);
+	assertChunkTypeBytes(typeBytes);
+	return {
+		length: readUint32BE(headerBytes, 0),
+		type: latin1BytesToString(typeBytes),
+	};
+}
+
+export function parsePNGChunk(raw: Uint8Array): PNGChunk {
+	if (raw.byteLength < 12) {
+		throwError("PNG chunk header is truncated");
+	}
+
+	const { length, type } = parsePNGChunkHeader(raw.subarray(0, 8));
+	const dataStart = 8;
+	const dataEnd = dataStart + length;
+	const crcStart = dataEnd;
+	const nextOffset = crcStart + 4;
+
+	if (nextOffset !== raw.byteLength) {
+		throwError("PNG chunk data is truncated");
+	}
+
+	const typeBytes = raw.subarray(4, 8);
+	const data = raw.slice(dataStart, dataEnd);
+	const crc = readUint32BE(raw, crcStart);
+	const expectedCrc = crc32(concatU8Arrays(typeBytes, data));
+
+	if (crc !== expectedCrc) {
+		throwError("PNG chunk CRC mismatch");
+	}
+
+	return { crc, data, length, raw, type };
 }
 
 export function parsePNGBytes(
 	bytes: Uint8Array,
 	{ requireIEND = false }: ParsePNGBytesOptions = {},
 ): PNGChunk[] {
-	if (bytes.byteLength < PNG_SIGNATURE.byteLength) {
-		throwError("PNG signature is truncated");
-	}
-
-	if (!PNG_SIGNATURE.every((value, index) => bytes[index] === value)) {
-		throwError("PNG signature is invalid");
-	}
+	assertPNGSignature(bytes);
 
 	const chunks: PNGChunk[] = [];
 	let offset = PNG_SIGNATURE.byteLength;
 	let seenIEND = false;
 
 	while (offset < bytes.byteLength) {
-		if (bytes.byteLength - offset < 8) {
-			throwError("PNG chunk header is truncated");
-		}
-
-		const length = readUint32BE(bytes, offset);
-		const typeBytes = bytes.subarray(offset + 4, offset + 8);
-		assertChunkTypeBytes(typeBytes);
-		const type = latin1BytesToString(typeBytes);
-		const dataStart = offset + 8;
-		const dataEnd = dataStart + length;
-		const crcStart = dataEnd;
-		const nextOffset = crcStart + 4;
-
+		const header = parsePNGChunkHeader(bytes.subarray(offset, offset + 8));
+		const nextOffset = offset + 8 + header.length + 4;
 		if (nextOffset > bytes.byteLength) {
 			throwError("PNG chunk data is truncated");
 		}
 
-		const data = bytes.slice(dataStart, dataEnd);
-		const crc = readUint32BE(bytes, crcStart);
-		const expectedCrc = crc32(concatU8Arrays(typeBytes, data));
-
-		if (crc !== expectedCrc) {
-			throwError("PNG chunk CRC mismatch");
-		}
-
-		const raw = bytes.slice(offset, nextOffset);
-		chunks.push({ crc, data, length, raw, type });
+		const chunk = parsePNGChunk(bytes.slice(offset, nextOffset));
+		chunks.push(chunk);
 		offset = nextOffset;
 
-		if (type === PNG_IEND_CHUNK_TYPE) {
-			if (length !== 0) {
+		if (chunk.type === PNG_IEND_CHUNK_TYPE) {
+			if (chunk.length !== 0) {
 				throwError("PNG IEND chunk must be empty");
 			}
 			if (offset !== bytes.byteLength) {

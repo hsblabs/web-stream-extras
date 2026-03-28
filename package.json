@@ -7,13 +7,14 @@
     "dev": "tsdown --watch",
     "build": "tsdown",
     "bench": "pnpm build && node --experimental-strip-types ./bench/encryption.bench.ts",
-    "publish:check": "biome check ./src ./bench && pnpm test && pnpm build",
+    "test:package": "pnpm build && node ./scripts/package-smoke.mjs",
+    "publish:check": "pnpm lint && pnpm test && pnpm test:package",
     "prepublishOnly": "pnpm publish:check",
     "test": "vitest run ./src",
     "test:watch": "vitest ./src",
-    "test:static": "pnpm lint && pnpm fmt",
-    "lint": "biome check ./src ./bench --write",
-    "fmt": "biome format --write ./src ./bench"
+    "lint": "biome check ./src ./bench ./scripts",
+    "lint:fix": "biome check ./src ./bench ./scripts --write",
+    "format": "biome format --write ./src ./bench ./scripts"
   },
   "files": [
     "dist",

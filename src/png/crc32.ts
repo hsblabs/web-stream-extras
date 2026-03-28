@@ -14,12 +14,24 @@ const CRC32_TABLE = (() => {
 	return table;
 })();
 
-export function crc32(input: Uint8Array): number {
-	let value = 0xffff_ffff;
+export function createCRC32State(): number {
+	return 0xffff_ffff;
+}
+
+export function updateCRC32(state: number, input: Uint8Array): number {
+	let value = state >>> 0;
 
 	for (const byte of input) {
 		value = (CRC32_TABLE[(value ^ byte) & 0xff] ?? 0) ^ (value >>> 8);
 	}
 
-	return (value ^ 0xffff_ffff) >>> 0;
+	return value >>> 0;
+}
+
+export function finalizeCRC32(state: number): number {
+	return (state ^ 0xffff_ffff) >>> 0;
+}
+
+export function crc32(input: Uint8Array): number {
+	return finalizeCRC32(updateCRC32(createCRC32State(), input));
 }

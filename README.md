@@ -111,6 +111,7 @@ const decoded = encoded.pipeThrough(createCOBSDecoderStream());
 import {
   createPNGTextChunkWriter,
   extractPNGTextChunk,
+  streamPNGTextChunk,
 } from "@hsblabs/web-stream-extras/png";
 import { readAllBytes, readableFromChunks } from "@hsblabs/web-stream-extras";
 
@@ -123,6 +124,8 @@ const rebuiltPNG = await readAllBytes(payloadWriter.readable);
 const extracted = await readAllBytes(
   extractPNGTextChunk(readableFromChunks(rebuiltPNG)),
 );
+
+const streamed = streamPNGTextChunk(readableFromChunks(rebuiltPNG));
 ```
 
 ## Why Use It
@@ -193,10 +196,15 @@ The `png` subpath provides binary payload helpers for PNG files:
 
 - `createPNGTextChunkWriter`
 - `extractPNGTextChunk`
+- `streamPNGTextChunk`
 
 `createPNGTextChunkWriter()` accepts a source PNG stream and returns a `{ writable, readable }` pair. Write arbitrary `Uint8Array` payload bytes into `writable`, then read the rebuilt PNG from `readable`.
 
-`extractPNGTextChunk()` reads a PNG stream and returns the embedded binary payload as `ReadableStream<Uint8Array>`.
+`createPNGTextChunkWriter()` forwards validated source chunks as they are read, keeps `IEND` pending, then appends internal payload chunks and the final `IEND` after `writable` closes.
+
+`extractPNGTextChunk()` reads a PNG stream, validates the embedded payload, and then returns it as `ReadableStream<Uint8Array>`. The extractor keeps all-or-nothing semantics rather than emitting payload bytes before the final manifest and CRC are checked.
+
+`streamPNGTextChunk()` is the late-error variant. It emits payload data segments as they arrive and only rejects at the end if the terminal manifest or payload CRC is invalid.
 
 ### `webCryptoStream` example
 
@@ -244,3 +252,4 @@ console.log(new TextDecoder().decode(result)); // "secret payload"
 - For `encryption`, you are expected to provide the raw encryption key (`Uint8Array`) yourself.
 - `webCryptoStream()` is optional. It is a convenience wrapper when you already manage a separate `AES-GCM` master key and want encrypted per-stream keys as strings.
 - `png` stores payload bytes in internal `tEXt` chunks and does not expose low-level PNG metadata knobs in the public API.
+- `png` stores payload bytes as multiple internal data segments plus one terminal manifest segment before `IEND`.

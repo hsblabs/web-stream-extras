@@ -251,6 +251,33 @@ describe("extractPNGTextChunk", () => {
 		expect(extracted).toEqual(new Uint8Array(0));
 	});
 
+	it("propagates cancel reasons to the source png reader", async () => {
+		const embedded = await embedPayload(new Uint8Array([1, 2, 3]));
+		let canceledReason: unknown;
+		let index = 0;
+		const source = new ReadableStream<Uint8Array>({
+			cancel(reason) {
+				canceledReason = reason;
+			},
+			async pull(controller) {
+				if (index >= embedded.byteLength) {
+					controller.close();
+					return;
+				}
+
+				const next = embedded.slice(index, index + 1);
+				index += 1;
+				await delayed(undefined, 5);
+				controller.enqueue(next);
+			},
+		});
+		const reason = new Error("cancel extract");
+
+		await extractPNGTextChunk(source).cancel(reason);
+
+		expect(canceledReason).toBe(reason);
+	});
+
 	it("rejects pngs without embedded payloads", async () => {
 		await expect(
 			readAllBytes(extractPNGTextChunk(readableFromChunks(MINIMAL_PNG))),
@@ -527,6 +554,41 @@ describe("streamPNGTextChunk", () => {
 		expect(concatBytes(first.value, ...remaining)).toEqual(payload);
 	});
 
+	it("does not drain the source png past one upstream prefetch window without demand", async () => {
+		const payload = new Uint8Array(PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH + 8).map(
+			(_, index) => index & 0xff,
+		);
+		const embedded = await embedPayload(payload);
+		const sourceChunks = [
+			PNG_SIGNATURE,
+			...parsePNGBytes(embedded).map((chunk) => chunk.raw),
+		];
+		const firstInternalIndex =
+			parsePNGBytes(embedded).findIndex(isInternalTextChunk);
+		let pullCount = 0;
+		let index = 0;
+		const source = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				pullCount += 1;
+				if (index >= sourceChunks.length) {
+					controller.close();
+					return;
+				}
+
+				const chunk = sourceChunks[index];
+				index += 1;
+				await delayed(undefined, 5);
+				controller.enqueue(chunk);
+			},
+		});
+		const stream = streamPNGTextChunk(source);
+
+		await delayed(undefined, 80);
+
+		expect(pullCount).toBeLessThanOrEqual(firstInternalIndex + 3);
+		await stream.cancel(new Error("stop stream extract"));
+	});
+
 	it("allows partial output before reporting missing manifests", async () => {
 		const payload = new Uint8Array(PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH + 8).map(
 			(_, index) => index & 0xff,
@@ -697,6 +759,35 @@ describe("createPNGTextChunkWriter", () => {
 		);
 
 		expect(extracted).toEqual(new Uint8Array([1, 2, 3]));
+	});
+
+	it("does not drain the source png past one upstream prefetch window before downstream reads demand more output", async () => {
+		const sourceChunks = [
+			PNG_SIGNATURE,
+			...parsePNGBytes(MINIMAL_PNG).map((chunk) => chunk.raw),
+		];
+		let pullCount = 0;
+		let index = 0;
+		const source = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				pullCount += 1;
+				if (index >= sourceChunks.length) {
+					controller.close();
+					return;
+				}
+
+				const chunk = sourceChunks[index];
+				index += 1;
+				await delayed(undefined, 5);
+				controller.enqueue(chunk);
+			},
+		});
+		const writer = createPNGTextChunkWriter(source);
+
+		await delayed(undefined, 40);
+
+		expect(pullCount).toBeLessThanOrEqual(2);
+		await writer.readable.cancel(new Error("stop writer output"));
 	});
 
 	it("uses error as the default existing-chunk policy", async () => {

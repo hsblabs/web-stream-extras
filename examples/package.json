@@ -9,6 +9,9 @@
   "dependencies": {
     "@hsblabs/web-stream-extras": "workspace:*"
   },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  },
   "engines": {
     "node": ">=22"
   }

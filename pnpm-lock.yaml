@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/node':
+      specifier: ^25.3.3
+      version: 25.3.3
+
 importers:
 
   .:
@@ -15,7 +21,7 @@ importers:
         specifier: ^2.31.0
         version: 2.31.0(@types/node@25.3.3)
       '@types/node':
-        specifier: ^25.3.3
+        specifier: 'catalog:'
         version: 25.3.3
       tsdown:
         specifier: ^0.21.0-beta.2
@@ -32,6 +38,10 @@ importers:
       '@hsblabs/web-stream-extras':
         specifier: workspace:*
         version: link:..
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.3.3
 
 packages:
 

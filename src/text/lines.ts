@@ -1,5 +1,5 @@
+import { toReadableStream } from "../shared/readable";
 import type { TextDecodeStreamOptions, TextInputChunk } from "./codec";
-import { toReadableStream } from "./iterable";
 
 export interface LineSplitStreamOptions extends TextDecodeStreamOptions {
 	keepLineBreaks?: boolean;

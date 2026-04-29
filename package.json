@@ -25,6 +25,7 @@
   ],
   "exports": {
     ".": "./dist/index.js",
+    "./base64": "./dist/base64.js",
     "./encryption": "./dist/encryption.js",
     "./jsonl": "./dist/jsonl.js",
     "./text": "./dist/text.js",

@@ -1,4 +1,4 @@
-import { toReadableStream } from "./iterable";
+import { toReadableStream } from "../shared/readable";
 
 export type TextInputChunk = string | Uint8Array;
 

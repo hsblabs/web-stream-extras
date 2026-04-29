@@ -11,6 +11,7 @@ Use this package when you need to:
 - build or consume `ReadableStream<Uint8Array>` pipelines
 - collect byte streams into a single `Uint8Array`
 - convert between strings and `Uint8Array`
+- encode and decode base64 or base64url streams
 - decode, encode, split, and join text streams
 - encrypt or decrypt byte streams with the Web Streams API
 
@@ -153,6 +154,27 @@ import { splitLinesStream } from "@hsblabs/web-stream-extras/text";
 const lines = await readAllChunks(
   splitLinesStream(response.body!, { maxLineChars: 1024 }),
 );
+```
+
+### `@hsblabs/web-stream-extras/base64`
+
+The `base64` subpath provides streaming base64 and base64url codecs:
+
+- `Base64EncodeStream`
+- `Base64DecodeStream`
+- `encodeBase64Stream`
+- `decodeBase64Stream`
+- `encodeBase64UrlStream`
+- `decodeBase64UrlStream`
+
+The encoder preserves chunk boundaries where it can while carrying incomplete 3-byte groups to the next chunk. `encodeBase64UrlStream()` omits padding by default.
+
+```ts
+import { readAllChunks } from "@hsblabs/web-stream-extras";
+import { encodeBase64UrlStream } from "@hsblabs/web-stream-extras/base64";
+
+const encoded = await readAllChunks(encodeBase64UrlStream(file.stream()));
+const token = encoded.join("");
 ```
 
 ### `webCryptoStream` example

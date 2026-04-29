@@ -2,7 +2,7 @@ packages:
   - "examples"
 
 catalog:
-  "@types/node": ^25.3.3
+  "@types/node": ^25.6.0
 
 ignoredBuiltDependencies:
   - esbuild

@@ -27,6 +27,7 @@
     ".": "./dist/index.js",
     "./encryption": "./dist/encryption.js",
     "./jsonl": "./dist/jsonl.js",
+    "./text": "./dist/text.js",
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",

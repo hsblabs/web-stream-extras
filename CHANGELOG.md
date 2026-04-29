@@ -1,5 +1,12 @@
 # @hsblabs/web-stream-extras
 
+## 0.5.1
+
+### Patch Changes
+
+- 229dccd: chore: refactor type checks to use isInstance and isError utility functions
+- a64efc5: chore: upgrade @biomejs/biome to 2.4.13 and typescript to 6.0.3
+
 ## 0.5.0
 
 ### Minor Changes

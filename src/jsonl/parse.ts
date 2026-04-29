@@ -1,3 +1,5 @@
+import { isError } from "../shared/is";
+
 export type JSONLInputChunk = string | Uint8Array;
 
 export interface JSONLParseStreamOptions {
@@ -20,7 +22,7 @@ export class JSONLParseError extends SyntaxError {
 		line: string;
 		cause: unknown;
 	}) {
-		const causeMessage = cause instanceof Error ? cause.message : String(cause);
+		const causeMessage = isError(cause) ? cause.message : String(cause);
 
 		super(`Invalid JSONL at line ${lineNumber}: ${causeMessage}`, {
 			cause,

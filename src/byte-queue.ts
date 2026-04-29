@@ -19,6 +19,59 @@ export class ByteQueue {
 		this.#byteLength += chunk.byteLength;
 	}
 
+	discard(length: number): void {
+		if (length < 0) {
+			throwError("Length must be non-negative");
+		}
+		if (length > this.#byteLength) {
+			throwError("Length exceeds buffered data");
+		}
+		if (length === 0) {
+			return;
+		}
+
+		let remaining = length;
+
+		while (remaining > 0) {
+			const chunk = this.#chunks[this.#head];
+			if (!chunk) {
+				throwError("Buffered data is inconsistent");
+			}
+
+			if (chunk.byteLength <= remaining) {
+				this.#head++;
+				remaining -= chunk.byteLength;
+				continue;
+			}
+
+			this.#chunks[this.#head] = chunk.subarray(remaining);
+			remaining = 0;
+		}
+
+		this.#byteLength -= length;
+		this.#compact();
+	}
+
+	indexOf(value: number): number {
+		let offset = 0;
+
+		for (let index = this.#head; index < this.#chunks.length; index++) {
+			const chunk = this.#chunks[index];
+			if (!chunk) {
+				break;
+			}
+
+			const foundIndex = chunk.indexOf(value);
+			if (foundIndex !== -1) {
+				return offset + foundIndex;
+			}
+
+			offset += chunk.byteLength;
+		}
+
+		return -1;
+	}
+
 	read(length: number): Uint8Array {
 		if (length < 0) {
 			throwError("Length must be non-negative");

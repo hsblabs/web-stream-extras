@@ -39,6 +39,26 @@ describe("ByteQueue", () => {
 		expect(() => queue.read(2)).toThrow();
 	});
 
+	it("finds a byte across chunk boundaries without flattening the queue", () => {
+		const queue = new ByteQueue();
+		queue.append(toU8Array([1, 2]));
+		queue.append(toU8Array([3, 0, 4]));
+
+		expect(queue.indexOf(0)).toBe(3);
+		expect(queue.indexOf(9)).toBe(-1);
+	});
+
+	it("discards buffered bytes without allocating a read result", () => {
+		const queue = new ByteQueue();
+		queue.append(toU8Array([1, 2]));
+		queue.append(toU8Array([3, 4, 5]));
+
+		queue.discard(3);
+
+		expect(queue.byteLength).toBe(2);
+		expect(queue.read(2)).toEqual(toU8Array([4, 5]));
+	});
+
 	it("preserves ordering after repeated reads trigger internal compaction", () => {
 		const queue = new ByteQueue();
 		const source = toU8Array(96);

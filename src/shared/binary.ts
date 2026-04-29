@@ -7,7 +7,7 @@ export function stringToBinary(value: string): Uint8Array {
 	return textEncoder.encode(value);
 }
 
-export function binaryToString(value: BufferSource): string {
+export function binaryToString(value: AllowSharedBufferSource): string {
 	return textDecoder.decode(value);
 }
 

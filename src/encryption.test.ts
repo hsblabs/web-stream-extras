@@ -73,11 +73,17 @@ function withTrailingByte(ciphertext: Uint8Array, value = 0xff): Uint8Array {
 }
 
 function toHex(data: Uint8Array): string {
-	return Buffer.from(data).toString("hex");
+	return Array.from(data)
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
 }
 
 function fromHex(value: string): Uint8Array {
-	return Uint8Array.from(Buffer.from(value, "hex"));
+	const bytes = new Uint8Array(value.length / 2);
+	for (let i = 0; i < bytes.length; i++) {
+		bytes[i] = Number.parseInt(value.slice(i * 2, i * 2 + 2), 16);
+	}
+	return bytes;
 }
 
 function createDeterministicRng(seed: number): () => number {

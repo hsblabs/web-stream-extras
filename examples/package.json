@@ -1,18 +1,18 @@
 {
-  "name": "examples",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "cobs": "node --experimental-strip-types ./cobs/index.ts",
-    "png": "node --experimental-strip-types ./png/index.ts"
-  },
-  "dependencies": {
-    "@hsblabs/web-stream-extras": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "catalog:"
-  },
-  "engines": {
-    "node": ">=22"
-  }
+	"name": "examples",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"cobs": "node --experimental-strip-types ./cobs/index.ts",
+		"png": "node --experimental-strip-types ./png/index.ts"
+	},
+	"dependencies": {
+		"@hsblabs/web-stream-extras": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/node": "catalog:"
+	},
+	"engines": {
+		"node": ">=22"
+	}
 }

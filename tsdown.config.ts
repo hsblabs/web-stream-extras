@@ -7,7 +7,8 @@ export default defineConfig({
 		"src/encryption.ts",
 		"src/jsonl.ts",
 		"src/text.ts",
-		"src/png.ts", "src/cobs.ts"
+		"src/png.ts",
+		"src/cobs.ts",
 	],
 	outDir: "dist",
 	target: "es2022",

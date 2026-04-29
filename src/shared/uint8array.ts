@@ -1,6 +1,6 @@
 const BYTE_LENGTH = "byteLength";
 
-export function toU8Array(length: number): Uint8Array;
+export function toU8Array(length: number): Uint8Array<ArrayBuffer>;
 export function toU8Array(
 	array: ArrayLike<number> | ArrayBufferLike,
 ): Uint8Array;

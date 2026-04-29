@@ -10,17 +10,16 @@
 
 import { readAllBytes, readableFromChunks } from "@hsblabs/web-stream-extras";
 import {
-    createPNGTextChunkWriter,
-    extractPNGTextChunk,
-    streamPNGTextChunk,
+	createPNGTextChunkWriter,
+	extractPNGTextChunk,
+	streamPNGTextChunk,
 } from "@hsblabs/web-stream-extras/png";
-
 
 // A minimal valid 1×1 pixel PNG used as the base image in these examples.
 // Replace this with a real PNG read from disk for real-world use.
 const MINIMAL_PNG = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-    "base64",
+	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+	"base64",
 );
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -32,17 +31,17 @@ const dec = new TextDecoder();
 // consuming readable to get the output PNG bytes.
 
 async function embed(
-    pngBytes: Uint8Array,
-    payload: Uint8Array,
+	pngBytes: Uint8Array,
+	payload: Uint8Array,
 ): Promise<Uint8Array> {
-    const writer = createPNGTextChunkWriter(readableFromChunks(pngBytes));
+	const writer = createPNGTextChunkWriter(readableFromChunks(pngBytes));
 
-    const [, result] = await Promise.all([
-        readableFromChunks(payload).pipeTo(writer.writable),
-        readAllBytes(writer.readable),
-    ]);
+	const [, result] = await Promise.all([
+		readableFromChunks(payload).pipeTo(writer.writable),
+		readAllBytes(writer.readable),
+	]);
 
-    return result;
+	return result;
 }
 
 // ── 1. Embed a text payload into a PNG ───────────────────────────────────────
@@ -56,8 +55,8 @@ console.log(`Source PNG size  : ${MINIMAL_PNG.byteLength} bytes`);
 console.log(`Payload size     : ${payload.byteLength} bytes`);
 console.log(`Embedded PNG size: ${embeddedPng.byteLength} bytes`);
 console.log(
-    "Still valid PNG? :",
-    embeddedPng[0] === 0x89 && embeddedPng[1] === 0x50,
+	"Still valid PNG? :",
+	embeddedPng[0] === 0x89 && embeddedPng[1] === 0x50,
 );
 
 // ── 2. Extract with all-or-nothing semantics ──────────────────────────────────
@@ -69,14 +68,14 @@ console.log(
 console.log("\n=== 2. extractPNGTextChunk (all-or-nothing) ===");
 
 const extracted = await readAllBytes(
-    extractPNGTextChunk(readableFromChunks(embeddedPng)),
+	extractPNGTextChunk(readableFromChunks(embeddedPng)),
 );
 
 console.log("Extracted payload:", dec.decode(extracted));
 console.log(
-    "Matches original :",
-    extracted.length === payload.length &&
-    extracted.every((b, i) => b === payload[i]),
+	"Matches original :",
+	extracted.length === payload.length &&
+		extracted.every((b, i) => b === payload[i]),
 );
 
 // ── 3. Stream with early emission ─────────────────────────────────────────────
@@ -93,29 +92,29 @@ const largePayload = enc.encode("A".repeat(64 * 1024)); // 64 KiB, spans two seg
 const largePng = await embed(MINIMAL_PNG, largePayload);
 
 const segmentReader = streamPNGTextChunk(
-    readableFromChunks(largePng),
+	readableFromChunks(largePng),
 ).getReader();
 
 const segments: Uint8Array[] = [];
 while (true) {
-    const { done, value } = await segmentReader.read();
-    if (done) break;
-    segments.push(value);
-    console.log(`  Received segment: ${value.byteLength} bytes`);
+	const { done, value } = await segmentReader.read();
+	if (done) break;
+	segments.push(value);
+	console.log(`  Received segment: ${value.byteLength} bytes`);
 }
 
 const reassembled = new Uint8Array(
-    segments.reduce((s, c) => s + c.byteLength, 0),
+	segments.reduce((s, c) => s + c.byteLength, 0),
 );
 let offset = 0;
 for (const seg of segments) {
-    reassembled.set(seg, offset);
-    offset += seg.byteLength;
+	reassembled.set(seg, offset);
+	offset += seg.byteLength;
 }
 console.log(
-    "Reassembled matches original:",
-    reassembled.length === largePayload.length &&
-    reassembled.every((b, i) => b === largePayload[i]),
+	"Reassembled matches original:",
+	reassembled.length === largePayload.length &&
+		reassembled.every((b, i) => b === largePayload[i]),
 );
 
 // ── 4. Re-embed with { onExisting: "replace" } ───────────────────────────────
@@ -127,15 +126,15 @@ console.log("\n=== 4. Replace existing payload ===");
 
 const replacement = enc.encode("Updated payload");
 const replaceWriter = createPNGTextChunkWriter(
-    readableFromChunks(embeddedPng),
-    { onExisting: "replace" },
+	readableFromChunks(embeddedPng),
+	{ onExisting: "replace" },
 );
 const [, replacedPng] = await Promise.all([
-    readableFromChunks(replacement).pipeTo(replaceWriter.writable),
-    readAllBytes(replaceWriter.readable),
+	readableFromChunks(replacement).pipeTo(replaceWriter.writable),
+	readAllBytes(replaceWriter.readable),
 ]);
 
 const replacedExtracted = await readAllBytes(
-    extractPNGTextChunk(readableFromChunks(replacedPng)),
+	extractPNGTextChunk(readableFromChunks(replacedPng)),
 );
 console.log("Replaced payload:", dec.decode(replacedExtracted));

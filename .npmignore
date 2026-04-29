@@ -1,6 +1,7 @@
 # The package is primarily controlled by package.json "files", but keep
 # explicit ignores as a defensive fallback if that whitelist changes.
 .agents/
+.changeset/
 .claude/
 .github/
 .serena/

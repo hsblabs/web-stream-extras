@@ -1,14 +1,16 @@
 {
   "name": "@hsblabs/web-stream-extras",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "Utilities for WHATWG streams.",
   "type": "module",
   "scripts": {
     "dev": "tsdown --watch",
     "build": "tsdown",
     "bench": "pnpm build && node --experimental-strip-types ./bench/encryption.bench.ts",
-    "test:package": "pnpm build && node ./scripts/package-smoke.mjs",
-    "publish:check": "pnpm lint && pnpm test && pnpm test:package",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "publish:check": "biome check ./src ./bench && pnpm test && pnpm build",
     "prepublishOnly": "pnpm publish:check",
     "test": "vitest run ./src",
     "test:watch": "vitest ./src",
@@ -23,9 +25,12 @@
   ],
   "exports": {
     ".": "./dist/index.js",
+    "./base64": "./dist/base64.js",
     "./cobs": "./dist/cobs.js",
     "./encryption": "./dist/encryption.js",
+    "./jsonl": "./dist/jsonl.js",
     "./png": "./dist/png.js",
+    "./text": "./dist/text.js",
     "./package.json": "./package.json"
   },
   "types": "./dist/index.d.ts",
@@ -51,10 +56,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^25.3.3",
     "tsdown": "^0.21.0-beta.2",
     "typescript": "6.0.0-beta",
     "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@10.30.3"
+  "packageManager": "pnpm@10.33.2"
 }

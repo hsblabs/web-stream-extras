@@ -12,6 +12,8 @@ Use this package when you need to:
 - collect byte streams into a single `Uint8Array`
 - convert between strings and `Uint8Array`
 - encode or decode delimiter-separated COBS frames
+- encode and decode base64 or base64url streams
+- decode, encode, split, and join text streams
 - encrypt or decrypt byte streams with the Web Streams API
 - embed or extract binary payloads inside PNG `tEXt` chunks
 
@@ -205,6 +207,50 @@ The `png` subpath provides binary payload helpers for PNG files:
 `extractPNGTextChunk()` reads a PNG stream, validates the embedded payload, and then returns it as `ReadableStream<Uint8Array>`. The extractor keeps all-or-nothing semantics rather than emitting payload bytes before the final manifest and CRC are checked.
 
 `streamPNGTextChunk()` is the late-error variant. It emits payload data segments as they arrive and only rejects at the end if the terminal manifest or payload CRC is invalid.
+### `@hsblabs/web-stream-extras/text`
+
+The `text` subpath provides small convenience wrappers for text-oriented streams:
+
+- `TextDecodeStream`
+- `TextEncodeStream`
+- `LineSplitStream`
+- `LineJoinStream`
+- `decodeTextStream`
+- `encodeTextStream`
+- `splitLinesStream`
+- `joinLinesStream`
+
+`TextDecodeStream` accepts `string | Uint8Array` chunks, which makes it useful when a pipeline may already contain decoded text. `LineSplitStream` handles UTF-8 byte chunks and string chunks, including chunks split inside multibyte characters.
+
+```ts
+import { readAllChunks } from "@hsblabs/web-stream-extras";
+import { splitLinesStream } from "@hsblabs/web-stream-extras/text";
+
+const lines = await readAllChunks(
+  splitLinesStream(response.body!, { maxLineChars: 1024 }),
+);
+```
+
+### `@hsblabs/web-stream-extras/base64`
+
+The `base64` subpath provides streaming base64 and base64url codecs:
+
+- `Base64EncodeStream`
+- `Base64DecodeStream`
+- `encodeBase64Stream`
+- `decodeBase64Stream`
+- `encodeBase64UrlStream`
+- `decodeBase64UrlStream`
+
+The encoder preserves chunk boundaries where it can while carrying incomplete 3-byte groups to the next chunk. `encodeBase64UrlStream()` omits padding by default.
+
+```ts
+import { readAllChunks } from "@hsblabs/web-stream-extras";
+import { encodeBase64UrlStream } from "@hsblabs/web-stream-extras/base64";
+
+const encoded = await readAllChunks(encodeBase64UrlStream(file.stream()));
+const token = encoded.join("");
+```
 
 ### `webCryptoStream` example
 

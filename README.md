@@ -11,6 +11,7 @@ Use this package when you need to:
 - build or consume `ReadableStream<Uint8Array>` pipelines
 - collect byte streams into a single `Uint8Array`
 - convert between strings and `Uint8Array`
+- decode, encode, split, and join text streams
 - encrypt or decrypt byte streams with the Web Streams API
 
 This makes it a good fit for:
@@ -129,6 +130,30 @@ The `encryption` subpath provides stream encryption utilities for binary streams
 `encryptStream()` and `decryptStream()` are convenience helpers for piping an existing `ReadableStream<Uint8Array>` through the corresponding transform stream.
 
 `webCryptoStream(masterKey)` is a higher-level helper for applications that manage stream keys with the Web Crypto API. It uses an `AES-GCM` master key to create encrypted 32-byte stream keys, then unwraps those keys before delegating to `encryptStream()` and `decryptStream()`.
+
+### `@hsblabs/web-stream-extras/text`
+
+The `text` subpath provides small convenience wrappers for text-oriented streams:
+
+- `TextDecodeStream`
+- `TextEncodeStream`
+- `LineSplitStream`
+- `LineJoinStream`
+- `decodeTextStream`
+- `encodeTextStream`
+- `splitLinesStream`
+- `joinLinesStream`
+
+`TextDecodeStream` accepts `string | Uint8Array` chunks, which makes it useful when a pipeline may already contain decoded text. `LineSplitStream` handles UTF-8 byte chunks and string chunks, including chunks split inside multibyte characters.
+
+```ts
+import { readAllChunks } from "@hsblabs/web-stream-extras";
+import { splitLinesStream } from "@hsblabs/web-stream-extras/text";
+
+const lines = await readAllChunks(
+  splitLinesStream(response.body!, { maxLineChars: 1024 }),
+);
+```
 
 ### `webCryptoStream` example
 

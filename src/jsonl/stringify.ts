@@ -1,3 +1,5 @@
+import { isInstance } from "../shared/is";
+
 export interface JSONLStringifyStreamOptions {
 	replacer?: Parameters<typeof JSON.stringify>[1];
 }
@@ -77,7 +79,7 @@ export function encodeJSONLStream<T>(
 function toReadableStream<T>(
 	input: ReadableStream<T> | Iterable<T> | AsyncIterable<T>,
 ): ReadableStream<T> {
-	if (input instanceof ReadableStream) {
+	if (isInstance(input, ReadableStream)) {
 		return input;
 	}
 

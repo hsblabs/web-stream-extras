@@ -1,7 +1,9 @@
+import { isInstance } from "./is";
+
 export function toReadableStream<T>(
 	input: ReadableStream<T> | Iterable<T> | AsyncIterable<T>,
 ): ReadableStream<T> {
-	if (input instanceof ReadableStream) {
+	if (isInstance(input, ReadableStream)) {
 		return input;
 	}
 

@@ -8,7 +8,7 @@ catalogs:
   default:
     '@types/node':
       specifier: ^25.6.0
-      version: 25.3.3
+      version: 25.6.0
 
 importers:
 

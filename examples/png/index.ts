@@ -15,13 +15,13 @@ import {
     streamPNGTextChunk,
 } from "@hsblabs/web-stream-extras/png";
 
+
 // A minimal valid 1×1 pixel PNG used as the base image in these examples.
 // Replace this with a real PNG read from disk for real-world use.
 const MINIMAL_PNG = Buffer.from(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
     "base64",
 );
-
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 

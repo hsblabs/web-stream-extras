@@ -24,7 +24,7 @@ import {
 	extractPNGTextChunk,
 	streamPNGTextChunk,
 } from "./png/public";
-import { readAllBytes, readableFromChunks } from "./readable";
+import { readableFromChunks, readAllBytes } from "./readable";
 
 const MINIMAL_PNG = concatBytes(
 	PNG_SIGNATURE,
@@ -77,6 +77,22 @@ function delayed<T>(value: T, ms: number): Promise<T> {
 	return new Promise((resolve) => {
 		setTimeout(() => resolve(value), ms);
 	});
+}
+
+function timeoutFail(ms: number, message: string): Promise<never> {
+	return delayed(undefined, ms).then(() => {
+		throw new Error(message);
+	});
+}
+
+function expectReadValue<T>(
+	result: ReadableStreamReadResult<T>,
+	message: string,
+): T {
+	if (result.done) {
+		throw new Error(message);
+	}
+	return result.value;
 }
 
 function readableFromDelayedChunks(
@@ -504,9 +520,10 @@ describe("streamPNGTextChunk", () => {
 			readableFromChunks(splitIntoSingleBytes(embedded)),
 		).getReader();
 		const first = await reader.read();
+		const firstChunk = expectReadValue(first, "Expected payload bytes");
 
 		expect(first.done).toBe(false);
-		expect(first.value).toEqual(
+		expect(firstChunk).toEqual(
 			payload.subarray(0, PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH),
 		);
 
@@ -517,7 +534,7 @@ describe("streamPNGTextChunk", () => {
 			remaining.push(next.value);
 		}
 
-		expect(concatBytes(first.value, ...remaining)).toEqual(payload);
+		expect(concatBytes(firstChunk, ...remaining)).toEqual(payload);
 	});
 
 	it("emits payload bytes before the terminal manifest arrives", async () => {
@@ -534,13 +551,14 @@ describe("streamPNGTextChunk", () => {
 		);
 		const reader = stream.getReader();
 
-		const first = await Promise.race([reader.read(), delayed("pending", 80)]);
-		if (first === "pending") {
-			throw new Error("Expected payload bytes before the manifest arrived");
-		}
+		const first = await Promise.race([
+			reader.read(),
+			timeoutFail(80, "Expected payload bytes before the manifest arrived"),
+		]);
+		const firstChunk = expectReadValue(first, "Expected payload bytes");
 
 		expect(first.done).toBe(false);
-		expect(first.value).toEqual(
+		expect(firstChunk).toEqual(
 			payload.subarray(0, PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH),
 		);
 
@@ -551,7 +569,7 @@ describe("streamPNGTextChunk", () => {
 			remaining.push(next.value);
 		}
 
-		expect(concatBytes(first.value, ...remaining)).toEqual(payload);
+		expect(concatBytes(firstChunk, ...remaining)).toEqual(payload);
 	});
 
 	it("does not drain the source png past one upstream prefetch window without demand", async () => {
@@ -719,10 +737,11 @@ describe("createPNGTextChunkWriter", () => {
 		const payloadWriter = writer.writable.getWriter();
 		const writePromise = payloadWriter.write(new Uint8Array([1, 2, 3]));
 
-		const first = await Promise.race([reader.read(), delayed("pending", 40)]);
-		if (first === "pending") {
-			throw new Error("Expected the PNG signature before payload close");
-		}
+		const first = await Promise.race([
+			reader.read(),
+			timeoutFail(40, "Expected the PNG signature before payload close"),
+		]);
+		const firstChunk = expectReadValue(first, "Expected PNG signature");
 		const second = await reader.read();
 		const third = await reader.read();
 		const pendingRead = reader.read();
@@ -749,7 +768,7 @@ describe("createPNGTextChunkWriter", () => {
 		}
 
 		const rebuilt = concatBytes(
-			first.value,
+			firstChunk,
 			second.value as Uint8Array,
 			third.value as Uint8Array,
 			...remaining,

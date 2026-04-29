@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as base64Api from "./base64";
 import * as rootApi from "./index";
 import * as jsonlApi from "./jsonl";
 import * as textApi from "./text";
@@ -41,6 +42,19 @@ describe("text public API", () => {
 			"encodeTextStream",
 			"joinLinesStream",
 			"splitLinesStream",
+		]);
+	});
+});
+
+describe("base64 public API", () => {
+	it("only exports the supported base64 stream helpers", () => {
+		expect(Object.keys(base64Api).sort()).toEqual([
+			"Base64DecodeStream",
+			"Base64EncodeStream",
+			"decodeBase64Stream",
+			"decodeBase64UrlStream",
+			"encodeBase64Stream",
+			"encodeBase64UrlStream",
 		]);
 	});
 });

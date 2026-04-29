@@ -24,7 +24,7 @@ import {
 	extractPNGTextChunk,
 	streamPNGTextChunk,
 } from "./png/public";
-import { readableFromChunks, readAllBytes } from "./readable";
+import { readAllBytes, readableFromChunks } from "./readable";
 
 const MINIMAL_PNG = concatBytes(
 	PNG_SIGNATURE,

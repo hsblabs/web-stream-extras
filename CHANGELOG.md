@@ -1,5 +1,12 @@
 # @hsblabs/web-stream-extras
 
+## 0.5.2
+
+### Patch Changes
+
+- 4aec883: refactor: replace ByteQueue class with createByteQueue function for improved instantiation
+- 9ad56dd: refactor: consolidate shared module exports and reorganize internal file structure
+
 ## 0.5.1
 
 ### Patch Changes

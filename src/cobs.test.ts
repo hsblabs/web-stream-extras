@@ -8,7 +8,7 @@ import {
 	readCOBS,
 	writeCOBS,
 } from "./cobs";
-import { readAllBytes, readAllChunks, readableFromChunks } from "./readable";
+import { readAllBytes, readAllChunks, readableFromChunks } from "./shared";
 
 describe("cobs public API", () => {
 	it("exports the supported cobs helpers", () => {

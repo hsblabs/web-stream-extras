@@ -8,7 +8,7 @@ export default defineConfig({
 		"src/jsonl.ts",
 		"src/text.ts",
 		"src/png.ts",
-		"src/cobs.ts",
+		"src/cobs.ts"
 	],
 	outDir: "dist",
 	target: "es2022",

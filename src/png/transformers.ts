@@ -1,4 +1,4 @@
-import { ByteQueue } from "../byte-queue";
+import { type ByteQueue, createByteQueue } from "../byte-queue";
 import { throwError } from "../shared/error";
 import { concatU8Arrays } from "../shared/uint8array";
 import {
@@ -140,7 +140,7 @@ export function createPNGTextChunkWriterImpl(
 	let payloadNotifier = createDeferred<void>();
 	let outputNotifier = createDeferred<void>();
 	const outputChunks: Uint8Array[] = [];
-	const sourceQueue = new ByteQueue();
+	const sourceQueue = createByteQueue();
 	let sourcePump: Promise<void> | null = null;
 	let iendChunkRaw: Uint8Array | null = null;
 	let outputClosed = false;
@@ -432,7 +432,7 @@ export function streamPNGTextChunkImpl(
 		let completed = false;
 
 		try {
-			const sourceQueue = new ByteQueue();
+			const sourceQueue = createByteQueue();
 			await readPNGSignature(sourceReader, sourceQueue);
 
 			let expectedIndex = 0;

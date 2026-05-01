@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ByteQueue } from "./byte-queue";
+import { createByteQueue } from "./byte-queue";
 import { readAllBytes, readableFromChunks } from "./index";
 import { toU8Array } from "./shared/uint8array";
 
 describe("ByteQueue", () => {
 	it("reads across chunk boundaries without losing order", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		queue.append(toU8Array([1, 2]));
 		queue.append(toU8Array([3, 4, 5]));
 
@@ -15,7 +15,7 @@ describe("ByteQueue", () => {
 	});
 
 	it("returns the original chunk when reading its full length", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		const chunk = toU8Array([7, 8, 9]);
 		queue.append(chunk);
 
@@ -24,7 +24,7 @@ describe("ByteQueue", () => {
 	});
 
 	it("supports partial reads followed by the remainder", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		queue.append(toU8Array([1, 2, 3, 4]));
 
 		expect(queue.read(2)).toEqual(toU8Array([1, 2]));
@@ -33,14 +33,14 @@ describe("ByteQueue", () => {
 	});
 
 	it("rejects reads larger than the buffered payload", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		queue.append(toU8Array([1]));
 
 		expect(() => queue.read(2)).toThrow();
 	});
 
 	it("finds a byte across chunk boundaries without flattening the queue", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		queue.append(toU8Array([1, 2]));
 		queue.append(toU8Array([3, 0, 4]));
 
@@ -49,7 +49,7 @@ describe("ByteQueue", () => {
 	});
 
 	it("discards buffered bytes without allocating a read result", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		queue.append(toU8Array([1, 2]));
 		queue.append(toU8Array([3, 4, 5]));
 
@@ -60,7 +60,7 @@ describe("ByteQueue", () => {
 	});
 
 	it("preserves ordering after repeated reads trigger internal compaction", () => {
-		const queue = new ByteQueue();
+		const queue = createByteQueue();
 		const source = toU8Array(96);
 
 		for (let i = 0; i < source.length; i++) {

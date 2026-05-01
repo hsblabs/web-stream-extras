@@ -31,7 +31,7 @@
 		"./encryption": "./dist/encryption.js",
 		"./jsonl": "./dist/jsonl.js",
 		"./png": "./dist/png.js",
-		"./text": "./dist/text.js",
+		"./text": "./dist/text/index.js",
 		"./package.json": "./package.json"
 	},
 	"types": "./dist/index.d.ts",

@@ -5,7 +5,7 @@ import {
 	readAllChunks,
 	readableFromChunks,
 	stringToBinary,
-} from "./index";
+} from "../shared";
 import {
 	decodeTextStream,
 	encodeTextStream,
@@ -14,7 +14,7 @@ import {
 	splitLinesStream,
 	TextDecodeStream,
 	TextEncodeStream,
-} from "./text";
+} from "./index";
 
 describe("text", () => {
 	it("decodes UTF-8 chunks split inside a multibyte character", async () => {

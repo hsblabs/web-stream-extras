@@ -6,7 +6,7 @@ export default defineConfig({
 		"src/base64.ts",
 		"src/encryption.ts",
 		"src/jsonl.ts",
-		"src/text.ts",
+		"src/text/index.ts",
 		"src/png.ts",
 		"src/cobs.ts"
 	],

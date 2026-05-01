@@ -13,7 +13,7 @@ import {
 	readAllChunks,
 	readableFromChunks,
 	stringToBinary,
-} from "./index";
+} from "./shared";
 
 describe("base64", () => {
 	it("encodes byte chunks across 3-byte boundaries", async () => {

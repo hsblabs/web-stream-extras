@@ -1,5 +1,5 @@
-import type { BinaryReadableStream } from "../stream-types";
 import { isInstance } from "./is";
+import type { BinaryReadableStream } from "./stream";
 import { concatU8Arrays } from "./uint8array";
 
 export function toReadableStream<T>(

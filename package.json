@@ -27,8 +27,8 @@
 	"exports": {
 		".": "./dist/index.js",
 		"./base64": "./dist/base64.js",
-		"./cobs": "./dist/cobs.js",
-		"./encryption": "./dist/encryption.js",
+		"./cobs": "./dist/cobs/index.js",
+		"./encryption": "./dist/encryption/index.js",
 		"./jsonl": "./dist/jsonl.js",
 		"./png": "./dist/png.js",
 		"./text": "./dist/text/index.js",

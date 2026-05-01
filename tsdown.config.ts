@@ -4,11 +4,11 @@ export default defineConfig({
 	entry: [
 		"src/index.ts",
 		"src/base64.ts",
-		"src/encryption.ts",
+		"src/encryption/index.ts",
 		"src/jsonl.ts",
 		"src/text/index.ts",
 		"src/png.ts",
-		"src/cobs.ts"
+		"src/cobs/index.ts",
 	],
 	outDir: "dist",
 	target: "es2022",

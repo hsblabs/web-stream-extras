@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-	DecryptionStream,
-	decryptStream,
-	EncryptionStream,
-	encryptStream,
-	webCryptoStream,
-} from "./encryption";
-import { HEADER_SIZE, TAG_LENGTH } from "./encryption/constants";
-import {
 	binaryToString,
 	randomBytes,
 	readAllBytes,
 	readableFromChunks,
 	stringToBinary,
+} from "../shared";
+import { HEADER_SIZE, TAG_LENGTH } from "./constants";
+import {
+	DecryptionStream,
+	decryptStream,
+	EncryptionStream,
+	encryptStream,
+	webCryptoStream,
 } from "./index";
 
 const TEST_RECORD_SIZE = 64;

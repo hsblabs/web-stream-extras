@@ -1,4 +1,4 @@
-import { ByteQueue } from "../byte-queue";
+import { type ByteQueue, createByteQueue } from "../byte-queue";
 import { throwError } from "../shared/error";
 import { concatU8Arrays } from "../shared/uint8array";
 import {
@@ -33,7 +33,7 @@ function createDeferred<T>(): Deferred<T> {
 		resolve = innerResolve;
 		reject = innerReject;
 	});
-	void promise.catch(() => {});
+	void promise.catch(() => { });
 
 	return { promise, reject, resolve };
 }
@@ -53,7 +53,7 @@ async function cancelSourceReader(
 ): Promise<void> {
 	try {
 		await sourceReader.cancel(reason);
-	} catch {}
+	} catch { }
 }
 
 async function readPNGSignature(
@@ -140,7 +140,7 @@ export function createPNGTextChunkWriterImpl(
 	let payloadNotifier = createDeferred<void>();
 	let outputNotifier = createDeferred<void>();
 	const outputChunks: Uint8Array[] = [];
-	const sourceQueue = new ByteQueue();
+	const sourceQueue = createByteQueue();
 	let sourcePump: Promise<void> | null = null;
 	let iendChunkRaw: Uint8Array | null = null;
 	let outputClosed = false;
@@ -195,7 +195,7 @@ export function createPNGTextChunkWriterImpl(
 			await cancelSourceReader(sourceReader, reason);
 		}
 	})();
-	void initializePromise.catch(() => {});
+	void initializePromise.catch(() => { });
 
 	function startSourcePump(): void {
 		if (sourcePump) {
@@ -303,7 +303,7 @@ export function createPNGTextChunkWriterImpl(
 				await cancelSourceReader(sourceReader, reason);
 			}
 		})();
-		void sourcePump.catch(() => {});
+		void sourcePump.catch(() => { });
 	}
 
 	const readable = new ReadableStream<Uint8Array>({
@@ -432,7 +432,7 @@ export function streamPNGTextChunkImpl(
 		let completed = false;
 
 		try {
-			const sourceQueue = new ByteQueue();
+			const sourceQueue = createByteQueue();
 			await readPNGSignature(sourceReader, sourceQueue);
 
 			let expectedIndex = 0;

@@ -1,4 +1,4 @@
-import { ByteQueue } from "../byte-queue";
+import { createByteQueue } from "../byte-queue";
 import { throwError } from "../shared/error";
 
 const COBS_DELIMITER = 0x00;
@@ -88,7 +88,7 @@ export const createCOBSDecoderStream = (): TransformStream<
 	Uint8Array,
 	Uint8Array
 > => {
-	const buffer = new ByteQueue();
+	const buffer = createByteQueue();
 
 	return new TransformStream<Uint8Array, Uint8Array>({
 		flush() {

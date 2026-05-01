@@ -1,62 +1,70 @@
 import { throwError } from "./shared/error";
 import { toU8Array } from "./shared/uint8array";
 
-export class ByteQueue {
-	#chunks: Uint8Array[] = [];
-	#head = 0;
-	#byteLength = 0;
+export interface ByteQueue {
+	readonly byteLength: number;
+	append(chunk: Uint8Array): void;
+	discard(length: number): void;
+	indexOf(value: number): number;
+	read(length: number): Uint8Array;
+}
 
-	get byteLength(): number {
-		return this.#byteLength;
-	}
+export function createByteQueue(): ByteQueue {
+	const chunks: Uint8Array[] = [];
+	let head = 0;
+	let byteLength = 0;
 
-	append(chunk: Uint8Array): void {
-		if (chunk.byteLength === 0) {
+	const compact = (): void => {
+		if (head === 0) return;
+		if (head === chunks.length) {
+			chunks.length = 0;
+			head = 0;
 			return;
 		}
-
-		this.#chunks.push(chunk);
-		this.#byteLength += chunk.byteLength;
+		if (head >= 32 && head * 2 >= chunks.length) {
+			chunks.splice(0, head);
+			head = 0;
+		}
 	}
 
-	discard(length: number): void {
-		if (length < 0) {
-			throwError("Length must be non-negative");
-		}
-		if (length > this.#byteLength) {
-			throwError("Length exceeds buffered data");
-		}
-		if (length === 0) {
-			return;
-		}
+	const append: ByteQueue["append"] = (chunk) => {
+		const size = chunk.byteLength;
+		if (size === 0) return;
+		chunks.push(chunk);
+		byteLength += size;
+	};
+
+	const discard: ByteQueue["discard"] = (length) => {
+		if (length < 0) throwError("Length must be non-negative");
+		if (length > byteLength) throwError("Length exceeds buffered data");
+		if (length === 0) return;
 
 		let remaining = length;
 
 		while (remaining > 0) {
-			const chunk = this.#chunks[this.#head];
+			const chunk = chunks[head];
 			if (!chunk) {
 				throwError("Buffered data is inconsistent");
 			}
 
 			if (chunk.byteLength <= remaining) {
-				this.#head++;
+				head++;
 				remaining -= chunk.byteLength;
 				continue;
 			}
 
-			this.#chunks[this.#head] = chunk.subarray(remaining);
+			chunks[head] = chunk.subarray(remaining);
 			remaining = 0;
 		}
 
-		this.#byteLength -= length;
-		this.#compact();
+		byteLength -= length;
+		compact();
 	}
 
-	indexOf(value: number): number {
+	const indexOf: ByteQueue["indexOf"] = (value) => {
 		let offset = 0;
-
-		for (let index = this.#head; index < this.#chunks.length; index++) {
-			const chunk = this.#chunks[index];
+		for (let index = head; index < chunks.length; index++) {
+			const chunk = chunks[index];
 			if (!chunk) {
 				break;
 			}
@@ -72,22 +80,22 @@ export class ByteQueue {
 		return -1;
 	}
 
-	read(length: number): Uint8Array {
+	const read: ByteQueue["read"] = (length) => {
 		if (length < 0) {
 			throwError("Length must be non-negative");
 		}
-		if (length > this.#byteLength) {
+		if (length > byteLength) {
 			throwError("Length exceeds buffered data");
 		}
 		if (length === 0) {
 			return toU8Array(0);
 		}
 
-		const firstChunk = this.#chunks[this.#head];
+		const firstChunk = chunks[head];
 		if (firstChunk && firstChunk.byteLength === length) {
-			this.#head++;
-			this.#byteLength -= length;
-			this.#compact();
+			head++;
+			byteLength -= length;
+			compact();
 			return firstChunk;
 		}
 
@@ -95,7 +103,7 @@ export class ByteQueue {
 		let offset = 0;
 
 		while (offset < length) {
-			const chunk = this.#chunks[this.#head];
+			const chunk = chunks[head];
 			if (!chunk) {
 				throwError("Buffered data is inconsistent");
 			}
@@ -105,28 +113,28 @@ export class ByteQueue {
 			offset += takeLength;
 
 			if (takeLength === chunk.byteLength) {
-				this.#head++;
+				head++;
 				continue;
 			}
 
-			this.#chunks[this.#head] = chunk.subarray(takeLength);
+			chunks[head] = chunk.subarray(takeLength);
 		}
 
-		this.#byteLength -= length;
-		this.#compact();
+		byteLength -= length;
+		compact();
 		return value;
 	}
 
-	#compact(): void {
-		if (this.#head === 0) return;
-		if (this.#head === this.#chunks.length) {
-			this.#chunks = [];
-			this.#head = 0;
-			return;
-		}
-		if (this.#head >= 32 && this.#head * 2 >= this.#chunks.length) {
-			this.#chunks = this.#chunks.slice(this.#head);
-			this.#head = 0;
-		}
+
+
+	return {
+		get byteLength(): number {
+			return byteLength;
+		},
+		append,
+		discard,
+		indexOf,
+		read,
 	}
+
 }

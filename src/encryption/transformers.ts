@@ -1,4 +1,4 @@
-import { ByteQueue } from "../byte-queue";
+import { createByteQueue } from "../byte-queue";
 import { toArrayBuffer } from "../shared/array-buffer";
 import { throwError } from "../shared/error";
 import { toU8Array } from "../shared/uint8array";
@@ -23,9 +23,8 @@ interface EncryptionTransformerOptions {
 }
 
 export class EncryptionTransformer
-	implements Transformer<Uint8Array, Uint8Array>
-{
-	#pending = new ByteQueue();
+	implements Transformer<Uint8Array, Uint8Array> {
+	#pending = createByteQueue();
 	#lastRecordCandidate: Uint8Array | undefined;
 	#sequence = 0;
 	#recordSize: number;
@@ -124,9 +123,8 @@ export class EncryptionTransformer
 }
 
 export class DecryptionTransformer
-	implements Transformer<Uint8Array, Uint8Array>
-{
-	#pending = new ByteQueue();
+	implements Transformer<Uint8Array, Uint8Array> {
+	#pending = createByteQueue();
 	#lastRecordCandidate: Uint8Array | undefined;
 	#sequence = 0;
 	#recordSize: number | undefined;

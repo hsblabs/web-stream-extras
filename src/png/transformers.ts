@@ -33,7 +33,7 @@ function createDeferred<T>(): Deferred<T> {
 		resolve = innerResolve;
 		reject = innerReject;
 	});
-	void promise.catch(() => { });
+	void promise.catch(() => {});
 
 	return { promise, reject, resolve };
 }
@@ -53,7 +53,7 @@ async function cancelSourceReader(
 ): Promise<void> {
 	try {
 		await sourceReader.cancel(reason);
-	} catch { }
+	} catch {}
 }
 
 async function readPNGSignature(
@@ -195,7 +195,7 @@ export function createPNGTextChunkWriterImpl(
 			await cancelSourceReader(sourceReader, reason);
 		}
 	})();
-	void initializePromise.catch(() => { });
+	void initializePromise.catch(() => {});
 
 	function startSourcePump(): void {
 		if (sourcePump) {
@@ -303,7 +303,7 @@ export function createPNGTextChunkWriterImpl(
 				await cancelSourceReader(sourceReader, reason);
 			}
 		})();
-		void sourcePump.catch(() => { });
+		void sourcePump.catch(() => {});
 	}
 
 	const readable = new ReadableStream<Uint8Array>({

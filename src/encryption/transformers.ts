@@ -23,7 +23,8 @@ interface EncryptionTransformerOptions {
 }
 
 export class EncryptionTransformer
-	implements Transformer<Uint8Array, Uint8Array> {
+	implements Transformer<Uint8Array, Uint8Array>
+{
 	#pending = createByteQueue();
 	#lastRecordCandidate: Uint8Array | undefined;
 	#sequence = 0;
@@ -123,7 +124,8 @@ export class EncryptionTransformer
 }
 
 export class DecryptionTransformer
-	implements Transformer<Uint8Array, Uint8Array> {
+	implements Transformer<Uint8Array, Uint8Array>
+{
 	#pending = createByteQueue();
 	#lastRecordCandidate: Uint8Array | undefined;
 	#sequence = 0;

@@ -25,7 +25,7 @@ export function createByteQueue(): ByteQueue {
 			chunks.splice(0, head);
 			head = 0;
 		}
-	}
+	};
 
 	const append: ByteQueue["append"] = (chunk) => {
 		const size = chunk.byteLength;
@@ -59,7 +59,7 @@ export function createByteQueue(): ByteQueue {
 
 		byteLength -= length;
 		compact();
-	}
+	};
 
 	const indexOf: ByteQueue["indexOf"] = (value) => {
 		let offset = 0;
@@ -78,7 +78,7 @@ export function createByteQueue(): ByteQueue {
 		}
 
 		return -1;
-	}
+	};
 
 	const read: ByteQueue["read"] = (length) => {
 		if (length < 0) {
@@ -123,9 +123,7 @@ export function createByteQueue(): ByteQueue {
 		byteLength -= length;
 		compact();
 		return value;
-	}
-
-
+	};
 
 	return {
 		get byteLength(): number {
@@ -135,6 +133,5 @@ export function createByteQueue(): ByteQueue {
 		discard,
 		indexOf,
 		read,
-	}
-
+	};
 }

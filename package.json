@@ -29,7 +29,7 @@
 		"./base64": "./dist/base64/index.js",
 		"./cobs": "./dist/cobs/index.js",
 		"./encryption": "./dist/encryption/index.js",
-		"./jsonl": "./dist/jsonl.js",
+		"./jsonl": "./dist/jsonl/index.js",
 		"./png": "./dist/png.js",
 		"./text": "./dist/text/index.js",
 		"./package.json": "./package.json"

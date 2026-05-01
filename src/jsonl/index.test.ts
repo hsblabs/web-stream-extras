@@ -5,7 +5,7 @@ import {
 	readAllChunks,
 	readableFromChunks,
 	stringToBinary,
-} from "./index";
+} from "../shared";
 import {
 	encodeJSONLStream,
 	JSONLEncodeStream,
@@ -14,7 +14,7 @@ import {
 	JSONLStringifyStream,
 	parseJSONLStream,
 	stringifyJSONLStream,
-} from "./jsonl";
+} from "./index";
 
 type Event = {
 	id: string;

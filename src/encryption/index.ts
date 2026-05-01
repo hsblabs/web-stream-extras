@@ -2,9 +2,9 @@ import { toArrayBuffer } from "../shared/array-buffer";
 import { decodeBase64Url, encodeBase64Url } from "../shared/base64url";
 import { randomBytes } from "../shared/binary";
 import { throwError } from "../shared/error";
+import type { BinaryReadableStream } from "../shared/stream";
+import { ByteTransformStream } from "../shared/stream";
 import { concatU8Arrays, toU8Array } from "../shared/uint8array";
-import type { BinaryReadableStream } from "../stream-types";
-import { ByteTransformStream } from "../transform-stream";
 import {
 	AES_GCM_BIT_LENGTH,
 	ALGORITHM_AES_GCM,

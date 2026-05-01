@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import * as cobsApi from "./cobs";
+import { readAllBytes, readAllChunks, readableFromChunks } from "../shared";
+import * as cobsApi from "./index";
 import {
 	createCOBSDecoderStream,
 	createCOBSEncoderStream,
@@ -7,8 +8,7 @@ import {
 	encodeCOBSFrame,
 	readCOBS,
 	writeCOBS,
-} from "./cobs";
-import { readAllBytes, readAllChunks, readableFromChunks } from "./readable";
+} from "./index";
 
 describe("cobs public API", () => {
 	it("exports the supported cobs helpers", () => {

@@ -1,4 +1,4 @@
-import { decodeCOBSFrame, encodeCOBSFrame } from "../cobs/public";
+import { decodeCOBSFrame, encodeCOBSFrame } from "../cobs";
 import { throwError } from "../shared/error";
 import { concatU8Arrays } from "../shared/uint8array";
 import {

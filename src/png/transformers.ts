@@ -1,6 +1,7 @@
 import { type ByteQueue, createByteQueue } from "../byte-queue";
 import { throwError } from "../shared/error";
 import { concatU8Arrays } from "../shared/uint8array";
+import type { PNGTextChunkWriteOptions, PNGTextChunkWriter } from ".";
 import {
 	PNG_IEND_CHUNK_TYPE,
 	PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH,
@@ -18,7 +19,6 @@ import {
 	parsePNGChunk,
 	parsePNGChunkHeader,
 } from "./framing";
-import type { PNGTextChunkWriteOptions, PNGTextChunkWriter } from "./public";
 
 interface Deferred<T> {
 	promise: Promise<T>;

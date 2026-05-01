@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { decodeCOBSFrame, encodeCOBSFrame } from "./cobs";
-import * as pngApi from "./png";
+import { decodeCOBSFrame, encodeCOBSFrame } from "../cobs";
+import { readAllBytes, readableFromChunks } from "../shared";
 import {
 	PNG_INTERNAL_TEXT_CHUNK_KEYWORD,
 	PNG_PAYLOAD_MAGIC,
 	PNG_PAYLOAD_SEGMENT_DATA_MAX_LENGTH,
 	PNG_PAYLOAD_VERSION,
 	PNG_SIGNATURE,
-} from "./png/constants";
-import { crc32 } from "./png/crc32";
+} from "./constants";
+import { crc32 } from "./crc32";
 import {
 	createChunk,
 	createPayloadDataSegment,
@@ -18,13 +18,13 @@ import {
 	isInternalTextChunk,
 	parsePayloadSegment,
 	parsePNGBytes,
-} from "./png/framing";
+} from "./framing";
+import * as pngApi from "./index";
 import {
 	createPNGTextChunkWriter,
 	extractPNGTextChunk,
 	streamPNGTextChunk,
-} from "./png/public";
-import { readAllBytes, readableFromChunks } from "./shared";
+} from "./index";
 
 const MINIMAL_PNG = concatBytes(
 	PNG_SIGNATURE,

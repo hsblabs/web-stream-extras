@@ -7,7 +7,7 @@ export default defineConfig({
 		"src/encryption/index.ts",
 		"src/jsonl/index.ts",
 		"src/text/index.ts",
-		"src/png.ts",
+		"src/png/index.ts",
 		"src/cobs/index.ts",
 	],
 	outDir: "dist",

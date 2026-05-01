@@ -30,7 +30,7 @@
 		"./cobs": "./dist/cobs/index.js",
 		"./encryption": "./dist/encryption/index.js",
 		"./jsonl": "./dist/jsonl/index.js",
-		"./png": "./dist/png.js",
+		"./png": "./dist/png/index.js",
 		"./text": "./dist/text/index.js",
 		"./package.json": "./package.json"
 	},

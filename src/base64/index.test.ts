@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+	binaryToString,
+	readAllBytes,
+	readAllChunks,
+	readableFromChunks,
+	stringToBinary,
+} from "../shared";
+import {
 	Base64DecodeStream,
 	Base64EncodeStream,
 	decodeBase64Stream,
 	decodeBase64UrlStream,
 	encodeBase64Stream,
 	encodeBase64UrlStream,
-} from "./base64";
-import {
-	binaryToString,
-	readAllBytes,
-	readAllChunks,
-	readableFromChunks,
-	stringToBinary,
-} from "./shared";
+} from "./index";
 
 describe("base64", () => {
 	it("encodes byte chunks across 3-byte boundaries", async () => {

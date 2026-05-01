@@ -3,7 +3,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
 	entry: [
 		"src/index.ts",
-		"src/base64.ts",
+		"src/base64/index.ts",
 		"src/encryption/index.ts",
 		"src/jsonl.ts",
 		"src/text/index.ts",

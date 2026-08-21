@@ -1,5 +1,11 @@
 # @hsblabs/web-stream-extras
 
+## 0.6.0
+
+### Minor Changes
+
+- a4fb76a: Improve encrypted stream latency and record-copy efficiency, and add opt-in ordered record concurrency and decryption record-size limits.
+
 ## 0.5.2
 
 ### Patch Changes

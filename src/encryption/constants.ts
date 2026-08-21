@@ -10,6 +10,7 @@ export const HEADER_SIZE = 21;
 export const HEADER_RECORD_SIZE_OFFSET = KEY_LENGTH;
 export const HEADER_VERSION_OFFSET = HEADER_RECORD_SIZE_OFFSET + 4;
 export const ECE_RECORD_SIZE = 1024 * 1024 * 4;
+export const DEFAULT_MAX_IN_FLIGHT_RECORDS = 1;
 export const KEY_USAGES: KeyUsage[] = ["decrypt", "encrypt"];
 export const LEGACY_HEADER_VERSION = 0 as const;
 export const CURRENT_HEADER_VERSION = 1 as const;

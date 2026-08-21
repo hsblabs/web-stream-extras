@@ -7,6 +7,7 @@ export interface ByteQueue {
 	discard(length: number): void;
 	indexOf(value: number): number;
 	read(length: number): Uint8Array;
+	readInto(target: Uint8Array): void;
 }
 
 export function createByteQueue(): ByteQueue {
@@ -92,14 +93,35 @@ export function createByteQueue(): ByteQueue {
 		}
 
 		const firstChunk = chunks[head];
-		if (firstChunk && firstChunk.byteLength === length) {
-			head++;
+		if (firstChunk && firstChunk.byteLength >= length) {
+			const value =
+				firstChunk.byteLength === length
+					? firstChunk
+					: firstChunk.subarray(0, length);
+			if (firstChunk.byteLength === length) {
+				head++;
+			} else {
+				chunks[head] = firstChunk.subarray(length);
+			}
 			byteLength -= length;
 			compact();
-			return firstChunk;
+			return value;
 		}
 
 		const value = toU8Array(length);
+		readInto(value);
+		return value;
+	};
+
+	const readInto: ByteQueue["readInto"] = (target) => {
+		const length = target.byteLength;
+		if (length > byteLength) {
+			throwError("Length exceeds buffered data");
+		}
+		if (length === 0) {
+			return;
+		}
+
 		let offset = 0;
 
 		while (offset < length) {
@@ -109,7 +131,7 @@ export function createByteQueue(): ByteQueue {
 			}
 
 			const takeLength = Math.min(length - offset, chunk.byteLength);
-			value.set(chunk.subarray(0, takeLength), offset);
+			target.set(chunk.subarray(0, takeLength), offset);
 			offset += takeLength;
 
 			if (takeLength === chunk.byteLength) {
@@ -122,7 +144,6 @@ export function createByteQueue(): ByteQueue {
 
 		byteLength -= length;
 		compact();
-		return value;
 	};
 
 	return {
@@ -133,5 +154,6 @@ export function createByteQueue(): ByteQueue {
 		discard,
 		indexOf,
 		read,
+		readInto,
 	};
 }

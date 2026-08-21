@@ -178,6 +178,7 @@ describe("encryption", () => {
 				encryptedStreamKey,
 				readableFromChunks(splitBytes(plaintext, [4, 3, 2, 1])),
 				{
+					maxInFlightRecords: 2,
 					recordSize: TEST_RECORD_SIZE,
 					salt: new Uint8Array(16).fill(5),
 				},
@@ -187,6 +188,10 @@ describe("encryption", () => {
 			await cryptoStream.decrypt(
 				encryptedStreamKey,
 				readableFromChunks(splitBytes(encrypted, [7, 5, 3])),
+				{
+					maxInFlightRecords: 2,
+					maxRecordSize: TEST_RECORD_SIZE,
+				},
 			),
 		);
 
@@ -385,6 +390,192 @@ describe("encryption", () => {
 			);
 
 			expect(decrypted).toEqual(plaintext);
+		}
+	});
+
+	it("emits an encrypted record after one byte of the next record arrives", async () => {
+		const recordPayloadSize = TEST_RECORD_SIZE - TAG_LENGTH - 1;
+		let sourceController:
+			| ReadableStreamDefaultController<Uint8Array>
+			| undefined;
+		const source = new ReadableStream<Uint8Array>({
+			start(controller) {
+				sourceController = controller;
+			},
+		});
+		const reader = source
+			.pipeThrough(
+				new EncryptionStream(randomBytes(32), {
+					maxInFlightRecords: 2,
+					recordSize: TEST_RECORD_SIZE,
+					salt: new Uint8Array(16).fill(7),
+				}),
+			)
+			.getReader();
+
+		await expect(reader.read()).resolves.toMatchObject({
+			done: false,
+			value: expect.objectContaining({ byteLength: HEADER_SIZE }),
+		});
+		sourceController?.enqueue(new Uint8Array(recordPayloadSize));
+		const firstRecord = reader.read();
+		sourceController?.enqueue(new Uint8Array([1]));
+
+		await expect(firstRecord).resolves.toMatchObject({
+			done: false,
+			value: expect.objectContaining({ byteLength: TEST_RECORD_SIZE }),
+		});
+
+		sourceController?.close();
+		const finalRecord = reader.read();
+		await expect(finalRecord).resolves.toMatchObject({ done: false });
+		await expect(reader.read()).resolves.toEqual({
+			done: true,
+			value: undefined,
+		});
+	});
+
+	it("emits a decrypted record after one byte of the next record arrives", async () => {
+		const encKey = randomBytes(32);
+		const recordPayloadSize = TEST_RECORD_SIZE - TAG_LENGTH - 1;
+		const plaintext = new Uint8Array(recordPayloadSize + 1).fill(3);
+		const encrypted = await encryptFixture(encKey, plaintext, plaintext);
+		let sourceController:
+			| ReadableStreamDefaultController<Uint8Array>
+			| undefined;
+		const source = new ReadableStream<Uint8Array>({
+			start(controller) {
+				sourceController = controller;
+			},
+		});
+		const reader = source
+			.pipeThrough(new DecryptionStream(encKey, { maxInFlightRecords: 2 }))
+			.getReader();
+		const firstRecordEnd = HEADER_SIZE + TEST_RECORD_SIZE;
+
+		sourceController?.enqueue(encrypted.subarray(0, firstRecordEnd));
+		const firstPlaintext = reader.read();
+		sourceController?.enqueue(
+			encrypted.subarray(firstRecordEnd, firstRecordEnd + 1),
+		);
+
+		await expect(firstPlaintext).resolves.toMatchObject({
+			done: false,
+			value: expect.objectContaining({ byteLength: recordPayloadSize }),
+		});
+
+		sourceController?.enqueue(encrypted.subarray(firstRecordEnd + 1));
+		sourceController?.close();
+		const finalPlaintext = reader.read();
+		await expect(finalPlaintext).resolves.toMatchObject({ done: false });
+		await expect(reader.read()).resolves.toEqual({
+			done: true,
+			value: undefined,
+		});
+	});
+
+	it("produces identical ciphertext with bounded concurrency", async () => {
+		const encKey = new Uint8Array(32).fill(1);
+		const salt = new Uint8Array(16).fill(2);
+		const plaintext = randomBytes(TEST_RECORD_PAYLOAD_SIZE * 4 + 3);
+		const ciphertexts: Uint8Array[] = [];
+
+		for (const maxInFlightRecords of [1, 2, 4]) {
+			ciphertexts.push(
+				await readAllBytes(
+					encryptStream(encKey, readableFromChunks(plaintext), {
+						maxInFlightRecords,
+						recordSize: TEST_RECORD_SIZE,
+						salt,
+					}),
+				),
+			);
+		}
+
+		expect(ciphertexts[1]).toEqual(ciphertexts[0]);
+		expect(ciphertexts[2]).toEqual(ciphertexts[0]);
+	});
+
+	it("round-trips with bounded encryption and decryption concurrency", async () => {
+		const encKey = randomBytes(32);
+		const plaintext = randomBytes(TEST_RECORD_PAYLOAD_SIZE * 4 + 3);
+
+		for (const maxInFlightRecords of [1, 2, 4]) {
+			const encrypted = encryptStream(
+				encKey,
+				readableFromChunks(splitBytes(plaintext, [5, 13, 61])),
+				{
+					maxInFlightRecords,
+					recordSize: TEST_RECORD_SIZE,
+					salt: new Uint8Array(16).fill(5),
+				},
+			);
+			const decrypted = await readAllBytes(
+				decryptStream(encKey, encrypted, { maxInFlightRecords }),
+			);
+
+			expect(decrypted).toEqual(plaintext);
+		}
+	});
+
+	it("rejects invalid concurrency limits before streaming starts", () => {
+		const encKey = randomBytes(32);
+
+		for (const maxInFlightRecords of [0, -1, 1.5]) {
+			expect(
+				() =>
+					new EncryptionStream(encKey, {
+						maxInFlightRecords,
+						recordSize: TEST_RECORD_SIZE,
+						salt: new Uint8Array(16),
+					}),
+			).toThrow();
+			expect(
+				() => new DecryptionStream(encKey, { maxInFlightRecords }),
+			).toThrow();
+		}
+	});
+
+	it("rejects record sizes above the configured decryption maximum", async () => {
+		const encKey = randomBytes(32);
+		const encrypted = await encryptFixture(
+			encKey,
+			new Uint8Array(1),
+			new Uint8Array(1),
+		);
+		const oversizedHeader = setRecordSize(
+			encrypted.subarray(0, HEADER_SIZE),
+			TEST_RECORD_SIZE + 1,
+		);
+
+		await expect(
+			readAllBytes(
+				decryptStream(encKey, readableFromChunks(oversizedHeader), {
+					maxRecordSize: TEST_RECORD_SIZE,
+				}),
+			),
+		).rejects.toThrow("exceeds configured maximum");
+	});
+
+	it("accepts a record size equal to the configured decryption maximum", async () => {
+		const encKey = randomBytes(32);
+		const plaintext = randomBytes(TEST_RECORD_PAYLOAD_SIZE + 3);
+		const encrypted = await encryptFixture(encKey, plaintext, plaintext);
+
+		await expect(
+			readAllBytes(
+				decryptStream(encKey, readableFromChunks(encrypted), {
+					maxRecordSize: TEST_RECORD_SIZE,
+				}),
+			),
+		).resolves.toEqual(plaintext);
+	});
+
+	it("rejects invalid maximum record sizes before streaming starts", () => {
+		const encKey = randomBytes(32);
+
+		for (const maxRecordSize of [TAG_LENGTH + 1, TEST_RECORD_SIZE + 0.5]) {
+			expect(() => new DecryptionStream(encKey, { maxRecordSize })).toThrow();
 		}
 	});
 

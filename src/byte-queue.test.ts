@@ -25,11 +25,36 @@ describe("ByteQueue", () => {
 
 	it("supports partial reads followed by the remainder", () => {
 		const queue = createByteQueue();
-		queue.append(toU8Array([1, 2, 3, 4]));
+		const chunk = toU8Array([1, 2, 3, 4]);
+		queue.append(chunk);
 
-		expect(queue.read(2)).toEqual(toU8Array([1, 2]));
+		const prefix = queue.read(2);
+		expect(prefix).toEqual(toU8Array([1, 2]));
+		expect(prefix.buffer).toBe(chunk.buffer);
+		expect(prefix.byteOffset).toBe(chunk.byteOffset);
 		expect(queue.read(2)).toEqual(toU8Array([3, 4]));
 		expect(queue.byteLength).toBe(0);
+	});
+
+	it("reads directly into a target across chunk boundaries", () => {
+		const queue = createByteQueue();
+		queue.append(toU8Array([1, 2]));
+		queue.append(toU8Array([3, 4, 5]));
+		const target = toU8Array(4);
+
+		queue.readInto(target);
+
+		expect(target).toEqual(toU8Array([1, 2, 3, 4]));
+		expect(queue.byteLength).toBe(1);
+		expect(queue.read(1)).toEqual(toU8Array([5]));
+	});
+
+	it("rejects readInto targets larger than the buffered payload", () => {
+		const queue = createByteQueue();
+		queue.append(toU8Array([1, 2]));
+
+		expect(() => queue.readInto(toU8Array(3))).toThrow();
+		expect(queue.read(2)).toEqual(toU8Array([1, 2]));
 	});
 
 	it("rejects reads larger than the buffered payload", () => {

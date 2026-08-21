@@ -7,7 +7,7 @@ import {
 	deriveRecordMaterial,
 	type RecordCipherAdapter,
 } from "./crypto";
-import { padRecord, removePadding } from "./framing";
+import { removePadding } from "./framing";
 
 export class RecordCipher {
 	#ikm: ArrayBuffer;
@@ -27,13 +27,8 @@ export class RecordCipher {
 	async encryptRecord(
 		buffer: Uint8Array,
 		sequence: number,
-		recordSize: number,
-		isLast: boolean,
 	): Promise<Uint8Array> {
-		return this.#getAesGcm().encrypt(
-			padRecord(buffer, recordSize, isLast),
-			this.#createNonce(sequence),
-		);
+		return this.#getAesGcm().encrypt(buffer, this.#createNonce(sequence));
 	}
 
 	async decryptRecord(

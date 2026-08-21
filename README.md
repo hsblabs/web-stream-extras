@@ -175,6 +175,21 @@ The `encryption` subpath provides stream encryption utilities for binary streams
 
 `encryptStream()` and `decryptStream()` are convenience helpers for piping an existing `ReadableStream<Uint8Array>` through the corresponding transform stream.
 
+`maxInFlightRecords` bounds ordered record concurrency for both encryption and decryption. It defaults to `1`; use `2` as a conservative opt-in starting point, then benchmark the target runtime because higher values increase temporary memory and are not always faster.
+
+`DecryptionStream` and `decryptStream()` also accept `maxRecordSize`. Its default preserves the full uint32 wire range. Set an application-specific limit when decrypting untrusted input so an oversized header is rejected before its record body is buffered.
+
+```ts
+const encrypted = encryptStream(encKey, plaintext, {
+  maxInFlightRecords: 2,
+});
+
+const decrypted = decryptStream(encKey, encrypted, {
+  maxInFlightRecords: 2,
+  maxRecordSize: 4 * 1024 * 1024,
+});
+```
+
 `webCryptoStream(masterKey)` is a higher-level helper for applications that manage stream keys with the Web Crypto API. It uses an `AES-GCM` master key to create encrypted 32-byte stream keys, then unwraps those keys before delegating to `encryptStream()` and `decryptStream()`.
 
 ### `@hsblabs/web-stream-extras/cobs`

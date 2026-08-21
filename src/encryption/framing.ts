@@ -77,27 +77,15 @@ export function assertWritableRecordSize(recordSize: number): void {
 	assertRecordSize(recordSize, "Record size is too small");
 }
 
-export function padRecord(
-	data: Uint8Array,
-	recordSize: number,
-	isLast: boolean,
-): Uint8Array {
-	if (data.length + TAG_LENGTH >= recordSize) {
-		throwError("Data too large for record size");
+export function assertMaxRecordSize(maxRecordSize: number): void {
+	if (!Number.isInteger(maxRecordSize)) {
+		throwError("Maximum record size must be an integer");
 	}
-	if (isLast) {
-		const result = toU8Array(data.byteLength + 1);
-		result.set(data);
-		result[data.byteLength] = 2;
-		return result;
+	if (maxRecordSize > MAX_HEADER_RECORD_SIZE) {
+		throwError("Maximum record size must fit in 4 bytes");
 	}
 
-	const padding = toU8Array(recordSize - data.length - TAG_LENGTH);
-	padding[0] = 1;
-	const result = toU8Array(data.byteLength + padding.byteLength);
-	result.set(data);
-	result.set(padding, data.byteLength);
-	return result;
+	assertRecordSize(maxRecordSize, "Maximum record size is too small");
 }
 
 export function removePadding(data: Uint8Array, isLast: boolean): Uint8Array {
@@ -112,7 +100,8 @@ export function removePadding(data: Uint8Array, isLast: boolean): Uint8Array {
 		} else if (data[i] !== 1) {
 			throwError("Delimiter of intermediate record is not 1");
 		}
-		return data.slice(0, i);
+		const view = data.subarray(0, i);
+		return view.byteLength * 2 >= data.byteLength ? view : view.slice();
 	}
 
 	throwError("No delimiter found in record");

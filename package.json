@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "tsdown --watch",
 		"build": "tsdown",
-		"bench": "pnpm build && node --experimental-strip-types ./bench/encryption.bench.ts",
+		"bench": "pnpm build && node --expose-gc --experimental-strip-types ./bench/encryption.bench.ts",
 		"changeset": "changeset",
 		"changeset:version": "changeset version",
 		"changeset:publish": "changeset publish",

@@ -9,8 +9,10 @@ import {
 	AES_GCM_BIT_LENGTH,
 	ALGORITHM_AES_GCM,
 	CURRENT_HEADER_VERSION,
+	DEFAULT_MAX_IN_FLIGHT_RECORDS,
 	ECE_RECORD_SIZE,
 	KEY_LENGTH,
+	MAX_HEADER_RECORD_SIZE,
 } from "./constants";
 import { DecryptionTransformer, EncryptionTransformer } from "./transformers";
 
@@ -20,6 +22,12 @@ const STREAM_KEY_LENGTH = 32;
 export interface EncryptionStreamOptions {
 	recordSize?: number;
 	salt?: Uint8Array;
+	maxInFlightRecords?: number;
+}
+
+export interface DecryptionStreamOptions {
+	maxInFlightRecords?: number;
+	maxRecordSize?: number;
 }
 
 export interface WebCryptoStream {
@@ -27,6 +35,7 @@ export interface WebCryptoStream {
 	decrypt(
 		encryptedStreamKey: string,
 		input: BinaryReadableStream,
+		options?: DecryptionStreamOptions,
 	): Promise<BinaryReadableStream>;
 	encrypt(
 		encryptedStreamKey: string,
@@ -39,6 +48,7 @@ export class EncryptionStream extends ByteTransformStream {
 	constructor(
 		encKey: Uint8Array,
 		{
+			maxInFlightRecords = DEFAULT_MAX_IN_FLIGHT_RECORDS,
 			recordSize = ECE_RECORD_SIZE,
 			salt = randomBytes(KEY_LENGTH),
 		}: EncryptionStreamOptions = {},
@@ -48,14 +58,26 @@ export class EncryptionStream extends ByteTransformStream {
 				recordSize,
 				salt,
 				version: CURRENT_HEADER_VERSION,
+				maxInFlightRecords,
 			}),
 		);
 	}
 }
 
 export class DecryptionStream extends ByteTransformStream {
-	constructor(encKey: Uint8Array) {
-		super(new DecryptionTransformer(encKey));
+	constructor(
+		encKey: Uint8Array,
+		{
+			maxInFlightRecords = DEFAULT_MAX_IN_FLIGHT_RECORDS,
+			maxRecordSize = MAX_HEADER_RECORD_SIZE,
+		}: DecryptionStreamOptions = {},
+	) {
+		super(
+			new DecryptionTransformer(encKey, {
+				maxInFlightRecords,
+				maxRecordSize,
+			}),
+		);
 	}
 }
 
@@ -70,8 +92,9 @@ export function encryptStream(
 export function decryptStream(
 	encKey: Uint8Array,
 	input: BinaryReadableStream,
+	options?: DecryptionStreamOptions,
 ): BinaryReadableStream {
-	return input.pipeThrough(new DecryptionStream(encKey));
+	return input.pipeThrough(new DecryptionStream(encKey, options));
 }
 
 function createMasterKeyParams(iv: Uint8Array): AesGcmParams {
@@ -149,10 +172,11 @@ export function webCryptoStream(masterKey: CryptoKey): WebCryptoStream {
 				options,
 			);
 		},
-		async decrypt(encryptedStreamKey, input) {
+		async decrypt(encryptedStreamKey, input, options) {
 			return decryptStream(
 				await decryptStreamKey(masterKey, encryptedStreamKey),
 				input,
+				options,
 			);
 		},
 	};

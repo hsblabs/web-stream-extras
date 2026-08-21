@@ -5,5 +5,8 @@ packages:
 catalog:
   "@types/node": ^25.6.0
 
+overrides:
+  "vitest>vite": 7.3.6
+
 ignoredBuiltDependencies:
   - esbuild
